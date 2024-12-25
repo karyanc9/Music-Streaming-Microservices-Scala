@@ -27,6 +27,7 @@ object FirebaseUtils {
 
   // Register a user using Firebase Admin SDK
   def registerUser(email: String, password: String): Option[String] = {
+
     try {
       val request = new UserRecord.CreateRequest()
         .setEmail(email)

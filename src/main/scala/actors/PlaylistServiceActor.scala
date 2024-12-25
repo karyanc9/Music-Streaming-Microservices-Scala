@@ -4,6 +4,7 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import utils.FirebaseUtils
 
+
 object PlaylistServiceActor {
   sealed trait Command
   case class CreatePlaylist(playlistId: String, data: Map[String, Any]) extends Command

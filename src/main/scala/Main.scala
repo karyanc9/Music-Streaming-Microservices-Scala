@@ -9,7 +9,6 @@ import utils.FirebaseUtils
 object Main extends App {
   // Initialize Firebase
   FirebaseUtils.initializeFirebase()
-
   // Initialize Actor System
   val userService: ActorRef[UserServiceActor.Command] = ActorSystem(UserServiceActor(), "UserServiceActor")
   val systemIntegrator: ActorRef[SystemIntegratorActor.Command] = ActorSystem(

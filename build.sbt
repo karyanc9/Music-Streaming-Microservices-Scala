@@ -20,6 +20,7 @@ libraryDependencies ++= Seq(
   "com.google.firebase" % "firebase-admin" % "9.1.1"
 )
 
+
 resolvers += "Sonatype OSS Releases" at "https://oss.sonatype.org/content/repositories/releases/"
 
 Compile / run / javaOptions ++= Seq(

@@ -4,6 +4,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import utils.FirebaseUtils
 
+
 object UserServiceActor {
   sealed trait Command
   case class RegisterUser(username: String, password: String, replyTo: ActorRef[String]) extends Command

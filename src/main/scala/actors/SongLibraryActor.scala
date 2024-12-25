@@ -4,6 +4,7 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import utils.FirebaseUtils
 
+
 object SongLibraryActor {
   sealed trait Command
   case class AddSong(songId: String, metadata: Map[String, String]) extends Command
