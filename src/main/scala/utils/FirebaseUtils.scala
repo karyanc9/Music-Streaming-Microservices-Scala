@@ -1,79 +1,234 @@
 package utils
 
 import com.google.firebase.{FirebaseApp, FirebaseOptions}
-import com.google.auth.oauth2.GoogleCredentials
-import com.google.firebase.auth.{FirebaseAuth, UserRecord}
-import com.google.firebase.database.{DatabaseReference, FirebaseDatabase}
+import com.google.firebase.auth.{FirebaseAuth, FirebaseAuthException, UserRecord}
+import com.google.firebase.database.{DataSnapshot, DatabaseError, DatabaseReference, FirebaseDatabase, Query, ValueEventListener}
+
 import java.io.FileInputStream
+import scala.concurrent.{Future, Promise}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters._
+import scala.util.{Failure, Success, Try}
+import java.util.UUID
 
 object FirebaseUtils {
-  // Initialize Firebase App
+  private var firebaseInitialized = false
+  private lazy val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
+  private lazy val database: DatabaseReference = FirebaseDatabase.getInstance().getReference
+
+  /** Initialize Firebase App */
   def initializeFirebase(): Unit = {
-    val serviceAccountPath = "src/main/firebase/firebase-config.json"
-    val serviceAccount = new FileInputStream(serviceAccountPath)
+    if (!firebaseInitialized) {
+      Try {
+        val serviceAccount = new FileInputStream("src/main/firebase/firebase-config.json")
+        val options = FirebaseOptions.builder()
+          .setCredentials(com.google.auth.oauth2.GoogleCredentials.fromStream(serviceAccount))
+          .setDatabaseUrl("https://spotify-8b642-default-rtdb.asia-southeast1.firebasedatabase.app")  // Use your actual Firebase database URL
+          .build()
 
-    val options = FirebaseOptions.builder()
-      .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-      .setDatabaseUrl("https://spotify-8b642-default-rtdb.asia-southeast1.firebasedatabase.app")
-      .build()
-
-    if (FirebaseApp.getApps.isEmpty) {
-      FirebaseApp.initializeApp(options)
-      println("Firebase successfully initialized.")
-    } else {
-      println("Firebase is already initialized.")
+        FirebaseApp.initializeApp(options)
+        firebaseInitialized = true
+        println("Firebase initialized successfully.")
+      } match {
+        case Success(_) => // Initialization successful
+        case Failure(exception) =>
+          println(s"Failed to initialize Firebase: ${exception.getMessage}")
+          throw exception
+      }
     }
   }
 
-  // Register a user using Firebase Admin SDK
-  def registerUser(email: String, password: String): Option[String] = {
+  /** Save song metadata to Firebase Realtime Database */
+  def saveSongMetadata(songId: String, metadata: Map[String, Any]): Future[Boolean] = {
+    initializeFirebase()
+    val promise = Promise[Boolean]()
+    val songRef = database.child("songs").child(songId)
 
-    try {
-      val request = new UserRecord.CreateRequest()
-        .setEmail(email)
-        .setPassword(password)
+    val futureResult = songRef.setValueAsync(metadata)
+    futureResult.addListener(new Runnable {
+      override def run(): Unit = {
+        try {
+          futureResult.get()
+          println(s"Song metadata saved successfully for songId: $songId")
+          promise.success(true)
+        } catch {
+          case e: Exception =>
+            println(s"Failed to save song metadata: ${e.getMessage}")
+            promise.failure(e)
+        }
+      }
+    }, scala.concurrent.ExecutionContext.global)
 
-      val userRecord = FirebaseAuth.getInstance().createUser(request)
-      Some(s"User ${userRecord.getEmail} registered successfully.")
-    } catch {
-      case ex: Exception =>
-        println(s"Failed to register user: ${ex.getMessage}")
-        None
+    promise.future
+  }
+
+  /** Register a new user with Firebase Authentication */
+  def registerUser(username: String, password: String): Future[Option[String]] = {
+    initializeFirebase()
+    val promise = Promise[Option[String]]()
+
+    Try {
+      val userRecord = firebaseAuth.createUser(
+        new UserRecord.CreateRequest()
+          .setEmail(username)
+          .setPassword(password)
+      )
+      promise.success(Some(s"User ${userRecord.getEmail} registered successfully."))
+    } match {
+      case Success(_) => // Success handled above
+      case Failure(exception) =>
+        println(s"Failed to register user: ${exception.getMessage}")
+        promise.success(None)
     }
+
+    promise.future
   }
 
-  // Login simulation (Firebase Admin SDK doesn't support user login)
-  def loginUser(email: String, password: String): Option[String] = {
-    println(s"Simulated login for user $email (Password verification not supported in Admin SDK)")
-    Some(s"User $email logged in successfully.")
+  /** Login a user with Firebase Authentication */
+  def loginUser(username: String, password: String): Future[Option[String]] = {
+    initializeFirebase()
+    val promise = Promise[Option[String]]()
+
+    // Check if user exists
+    Try {
+      val userRecord = firebaseAuth.getUserByEmail(username)
+      if (userRecord != null) {
+        // Only create session once, and directly pass the result to the promise
+        createSession(username).onComplete {
+          case Success(token) =>
+            // Only send a successful response after session creation
+            println(s"Login successful! Session started with token: $token")
+            promise.success(Some(s"Login successful! Session token: $token"))
+          case Failure(e) =>
+            println(s"Login successful, but session creation failed: ${e.getMessage}")
+            promise.success(Some("Login successful, but session creation failed."))
+        }
+      } else {
+        println("User not found")
+        promise.success(None)  // User does not exist
+      }
+    } match {
+      case Success(_) => // Success is handled in the above block
+      case Failure(exception: FirebaseAuthException) =>
+        println(s"Login failed: ${exception.getMessage}")
+        promise.success(None)  // Return None on FirebaseAuthException
+      case Failure(exception) =>
+        println(s"Unexpected error: ${exception.getMessage}")
+        promise.success(None)  // Handle other errors
+    }
+
+    promise.future
   }
 
-  // Save a playlist to Firebase Realtime Database
-  def savePlaylist(playlistId: String, data: Map[String, Any]): Unit = {
-    val ref = getDatabaseRef(s"playlists/$playlistId")
-    ref.setValueAsync(data)
+  /** Create a session for a user */
+  def createSession(username: String): Future[String] = {
+    initializeFirebase()
+    val token = UUID.randomUUID().toString // Generate a unique session token
+    val promise = Promise[String]()
+    val sessionRef = database.child("sessions").child(token)
+
+    // Properly sanitize the map keys
+    val sessionData = Map(
+      "username" -> username,
+      "createdAt" -> System.currentTimeMillis()
+    )
+
+    val futureResult = sessionRef.setValueAsync(sessionData.asJava) // Convert Scala Map to Java Map
+    futureResult.addListener(new Runnable {
+      override def run(): Unit = {
+        try {
+          futureResult.get()
+          println(s"Session created for $username with token $token")
+          promise.success(token)
+        } catch {
+          case e: Exception =>
+            println(s"Failed to create session for $username: ${e.getMessage}")
+            promise.failure(e)
+        }
+      }
+    }, scala.concurrent.ExecutionContext.global)
+
+    promise.future
   }
 
-  // Retrieve a playlist from Firebase Realtime Database
-  def getPlaylist(playlistId: String): Option[Map[String, Any]] = {
-    println(s"Simulated retrieval of playlist: $playlistId")
-    None
+  /** Check if an existing session already exists for a user */
+  def checkExistingSession(username: String): Future[Option[String]] = {
+    initializeFirebase()
+    val promise = Promise[Option[String]]()
+
+    val sessionRef = database.child("sessions")
+    sessionRef.orderByChild("username").equalTo(username).addListenerForSingleValueEvent(new ValueEventListener {
+      override def onDataChange(snapshot: DataSnapshot): Unit = {
+        if (snapshot.exists()) {
+          // If a session is found for the username, return the session token
+          val sessionToken = snapshot.getChildren.iterator().next().getKey
+          promise.success(Some(sessionToken))
+        } else {
+          promise.success(None) // No existing session
+        }
+      }
+
+      override def onCancelled(error: DatabaseError): Unit = {
+        println(s"Error checking for existing session: ${error.getMessage}")
+        promise.failure(new Exception(error.getMessage))
+      }
+    })
+
+    promise.future
   }
 
-  // Save song metadata to Firebase Realtime Database
-  def saveSongMetadata(songId: String, metadata: Map[String, String]): Unit = {
-    val ref = getDatabaseRef(s"songs/$songId")
-    ref.setValueAsync(metadata)
+  /** Validate a session token */
+  def validateSession(token: String): Future[Boolean] = {
+    initializeFirebase()
+    val promise = Promise[Boolean]()
+    val sessionRef = database.child("sessions").child(token)
+
+    sessionRef.addListenerForSingleValueEvent(new ValueEventListener {
+      override def onDataChange(snapshot: DataSnapshot): Unit = {
+        promise.success(snapshot.exists()) // Return true if token exists
+      }
+
+      override def onCancelled(error: DatabaseError): Unit = {
+        println(s"Error validating session: ${error.getMessage}")
+        promise.failure(new Exception(error.getMessage))
+      }
+    })
+
+    promise.future
   }
 
-  // Search for a song in Firebase Realtime Database
-  def searchSong(title: String): Option[String] = {
-    println(s"Simulated search for song: $title")
-    None
+  /** Retrieve a playlist from Firebase Realtime Database */
+  def getPlaylist(playlistId: String): Future[Option[Map[String, Any]]] = {
+    initializeFirebase()
+    // Placeholder implementation
+    Future.successful(Some(Map("id" -> playlistId, "name" -> "Sample Playlist")))
   }
 
-  // Get a Firebase Database reference
-  private def getDatabaseRef(path: String): DatabaseReference = {
-    FirebaseDatabase.getInstance().getReference(path)
+  /** Search for a song by title in Firebase Realtime Database */
+  def searchSong(title: String): Future[List[Map[String, Any]]] = {
+    initializeFirebase()
+    val promise = Promise[List[Map[String, Any]]]()
+    val songsRef = database.child("songs")
+    val query: Query = songsRef.orderByChild("title").equalTo(title)
+
+    query.addListenerForSingleValueEvent(new ValueEventListener {
+      override def onDataChange(snapshot: DataSnapshot): Unit = {
+        if (snapshot.exists()) {
+          val result = snapshot.getChildren.asScala.toList.map { child =>
+            child.getValue(classOf[java.util.Map[String, Any]]).asInstanceOf[Map[String, Any]]
+          }
+          promise.success(result)
+        } else {
+          promise.success(Nil) // Return an empty list if no songs are found
+        }
+      }
+
+      override def onCancelled(error: DatabaseError): Unit = {
+        println(s"Error searching for song: ${error.getMessage}")
+        promise.failure(new Exception(error.getMessage))
+      }
+    })
+
+    promise.future
   }
 }

@@ -2,20 +2,18 @@ package main
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import actors.{SystemIntegratorActor, UserServiceActor}
-import akka.actor.typed.ActorRef
+import actors.UserServiceActor
+import actors.UserServiceActor.{RegisterUser, LoginUser}
 import utils.FirebaseUtils
+
+import akka.actor.typed.ActorRef
 
 object Main extends App {
   // Initialize Firebase
   FirebaseUtils.initializeFirebase()
 
-  // Initialize Actor System
+  // Initialize UserServiceActor - Create the main ActorSystem once
   val userService: ActorRef[UserServiceActor.Command] = ActorSystem(UserServiceActor(), "UserServiceActor")
-  val systemIntegrator: ActorRef[SystemIntegratorActor.Command] = ActorSystem(
-    SystemIntegratorActor(userService, null, null), // Replace null with other services when implemented
-    "SystemIntegratorActor"
-  )
 
   // Interactive Menu
   println("Welcome to Spotify Distributed System")
@@ -31,15 +29,14 @@ object Main extends App {
       println("Enter password:")
       val password = scala.io.StdIn.readLine()
 
+      // Create a temporary actor to receive the reply for registration
       val replyActor = ActorSystem(Behaviors.receiveMessage[String] { response =>
-        println(response)
-        Behaviors.stopped // Stop the reply actor after receiving the response
+        println(response) // Print the response from Firebase
+        Behaviors.stopped // Stop the actor after receiving the response
       }, "RegisterReplyActor")
 
-      systemIntegrator ! SystemIntegratorActor.RouteToUserService(
-        UserServiceActor.RegisterUser(username, password, replyActor),
-        replyActor
-      )
+      // Send RegisterUser command to the UserServiceActor
+      userService ! RegisterUser(username, password, replyActor)
 
     case 2 =>
       println("Enter username (email):")
@@ -47,15 +44,14 @@ object Main extends App {
       println("Enter password:")
       val password = scala.io.StdIn.readLine()
 
+      // Create a temporary actor to receive the reply for login
       val replyActor = ActorSystem(Behaviors.receiveMessage[String] { response =>
-        println(response)
-        Behaviors.stopped // Stop the reply actor after receiving the response
+        println(response) // Print the response from Firebase
+        Behaviors.stopped // Stop the actor after receiving the response
       }, "LoginReplyActor")
 
-      systemIntegrator ! SystemIntegratorActor.RouteToUserService(
-        UserServiceActor.LoginUser(username, password, replyActor),
-        replyActor
-      )
+      // Send LoginUser command to the UserServiceActor
+      userService ! LoginUser(username, password, replyActor)
 
     case _ =>
       println("Invalid choice")
