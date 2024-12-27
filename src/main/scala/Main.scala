@@ -79,7 +79,7 @@ object Main extends App {
         if (songs.nonEmpty) {
           println(s"Number of songs found: ${songs.size}")
           //songs.foreach(song => println(s"Song Info: $song"))
-          //songs.foreach(song => println(formatSongInfo(song)))
+          songs.foreach(song => println(formatSongInfo(song)))
         } else {
           println("No songs found.")
         }
