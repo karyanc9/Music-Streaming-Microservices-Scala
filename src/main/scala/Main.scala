@@ -2,11 +2,12 @@ package main
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import actors.{SongLibraryActor, UserServiceActor, SystemIntegratorActor}
+import actors.{MusicPlayerActor, SongLibraryActor, SystemIntegratorActor, UserServiceActor}
 import actors.UserServiceActor.{LoginUser, RegisterUser}
 import utils.FirebaseUtils
 import akka.actor.typed.ActorRef
 import protocols.SongProtocols.{AddSong, SearchSong}
+
 
 object Main extends App {
   // Initialize Firebase
@@ -15,12 +16,15 @@ object Main extends App {
   // Initialize UserServiceActor - Create the main ActorSystem once
   val userService: ActorRef[UserServiceActor.Command] = ActorSystem(UserServiceActor(), "UserServiceActor")
   val songLibrary: ActorRef[protocols.SongProtocols.Command] = ActorSystem(SongLibraryActor(), "SongLibraryActor")
+  val musicPlayerActor: ActorSystem[protocols.SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
 
   // Initialize SongLibraryActor via SystemIntegratorActor
-  val systemIntegrator: ActorRef[SystemIntegratorActor.Command] = ActorSystem(
-    SystemIntegratorActor(userService, songLibrary ,null),
+  implicit val systemIntegrator: ActorRef[SystemIntegratorActor.Command] = ActorSystem(
+    SystemIntegratorActor(userService, songLibrary ,null, musicPlayerActor),
     "SystemIntegratorActor"
   )
+
+  //SongLibraryUI.fetchSongs
 
   // Interactive Menu
   println("Welcome to Spotify Distributed System")
@@ -71,7 +75,8 @@ object Main extends App {
           s"Genre: ${song.getOrElse("genre", "Unknown")}, " +
           s"Duration: ${song.getOrElse("duration", "Unknown")}, " +
           s"FilePath: ${song.getOrElse("filePath", "Unknown")}, " +
-          s"ImagePath: ${song.getOrElse("imagePath", "Unknown")}"
+          s"ImagePath: ${song.getOrElse("imagePath", "Unknown")} " +
+          s"SongId: ${song.getOrElse("id", "Unknown")}"
       }
 
       val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>

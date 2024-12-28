@@ -105,7 +105,8 @@ object SongLibraryActor {
         s"Genre: ${song.getOrElse("genre", "Unknown")}, " +
         s"Duration: ${song.getOrElse("duration", "Unknown")}, " +
         s"FilePath: ${song.getOrElse("filePath", "Unknown")}, " +
-        s"ImagePath: ${song.getOrElse("imagePath", "Unknown")}"
+        s"ImagePath: ${song.getOrElse("imagePath", "Unknown")} " +
+        s"SongId: ${song.getOrElse("id", "Unknown")}"
     }
 
     Behaviors.receiveMessage {
@@ -151,7 +152,6 @@ object SongLibraryActor {
         }
         replyTo ! songs
         Behaviors.same
-
 
       case WrappedSearchFailure(exception, replyTo) =>
         context.log.error(s"Error searching for song: ${exception.getMessage}")

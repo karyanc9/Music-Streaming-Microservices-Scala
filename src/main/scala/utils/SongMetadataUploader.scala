@@ -10,6 +10,7 @@ object SongMetadataUploader {
   def uploadSongsMetadata(): Future[Unit] = {
     val songs = Map(
       "song1" -> Map(
+        "id" -> "song1",
         "title" -> "Mamma Mia",
         "artist" -> "ABBA",
         "genre" -> "Pop",
@@ -18,6 +19,7 @@ object SongMetadataUploader {
         "imagePath" -> "songs/song1.jpg"
       ),
       "song2" -> Map(
+        "id" -> "song2",
         "title" -> "Billie Jean",
         "artist" -> "Michael Jackson",
         "genre" -> "Disco",
@@ -26,6 +28,7 @@ object SongMetadataUploader {
         "imagePath" -> "songs/song2.jpg"
       ),
       "song3" -> Map(
+        "id" -> "song3",
         "title" -> "Bohemian Rhapsody",
         "artist" -> "Queen",
         "genre" -> "Hard rock",
