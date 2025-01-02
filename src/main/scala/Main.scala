@@ -8,7 +8,6 @@ import utils.FirebaseUtils
 import akka.actor.typed.ActorRef
 import protocols.SongProtocols.{AddSong, SearchSong}
 
-
 object Main extends App {
   // Initialize Firebase
   FirebaseUtils.initializeFirebase()
@@ -16,15 +15,13 @@ object Main extends App {
   // Initialize UserServiceActor - Create the main ActorSystem once
   val userService: ActorRef[UserServiceActor.Command] = ActorSystem(UserServiceActor(), "UserServiceActor")
   val songLibrary: ActorRef[protocols.SongProtocols.Command] = ActorSystem(SongLibraryActor(), "SongLibraryActor")
-  val musicPlayerActor: ActorSystem[protocols.SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
+  val musicPlayerActor: ActorRef[protocols.SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
 
-  // Initialize SongLibraryActor via SystemIntegratorActor
+  // Initialize SystemIntegratorActor
   implicit val systemIntegrator: ActorRef[SystemIntegratorActor.Command] = ActorSystem(
-    SystemIntegratorActor(userService, songLibrary ,null, musicPlayerActor),
+    SystemIntegratorActor(userService, songLibrary, musicPlayerActor),
     "SystemIntegratorActor"
   )
-
-  //SongLibraryUI.fetchSongs
 
   // Interactive Menu
   println("Welcome to Spotify Distributed System")
@@ -80,10 +77,8 @@ object Main extends App {
       }
 
       val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>
-        //println(s"ReplyActor received songs: $songs")
         if (songs.nonEmpty) {
           println(s"Number of songs found: ${songs.size}")
-          //songs.foreach(song => println(s"Song Info: $song"))
           songs.foreach(song => println(formatSongInfo(song)))
         } else {
           println("No songs found.")
@@ -91,7 +86,7 @@ object Main extends App {
         Behaviors.stopped
       }, "SearchReplyActor")
 
-      //Route SearchSong command to SongLibraryActor via SystemIntegratorActor
+      // Route SearchSong command to SongLibraryActor via SystemIntegratorActor
       systemIntegrator ! SystemIntegratorActor.RouteToSongService(
         SearchSong(title, replyActor)
       )
