@@ -14,57 +14,75 @@ object SpotifySignUpPage extends JFXApp {
   stage = new PrimaryStage {
     title = "Spotify - Sign Up"
     scene = new Scene(360, 640) {
-      fill = Color.web("#121212") // Background color
+      fill = Color.web("#121212") // Dark background color for the entire page
 
+      // Logo
       val logoLabel = new Label {
         graphic = new Label {
           text = "\uD83C\uDFB6" // Placeholder for Spotify logo
-          style = "-fx-font-size: 40px; -fx-text-fill: #1ED760;"
+          style = "-fx-font-size: 40px; -fx-text-fill: #1ed760;"
         }
         alignment = Pos.Center
       }
 
-      val titleLabel = new Label("Sign up to start listening") {
+      // Title
+      val titleLabel = new Label {
+        text = "Sign up to\nstart listening"
         font = Font.font("Circular Std Bold", FontWeight.Bold, 24)
-        textFill = Color.White
+        textFill = Color.web("#ffffff")
         alignment = Pos.Center
+        style = "-fx-text-alignment: center;"
       }
 
+      // Email Address Label
+      val emailLabel = new Label("Email address") {
+        textFill = Color.web("#ffffff")
+        font = Font.font("Circular Std Medium", FontWeight.Normal, 12)
+        alignment = Pos.CenterLeft
+      }
+
+      // Email Address Input
       val emailField = new TextField {
-        promptText = "Email address"
+        promptText = "name@domain.com"
         style = """-fx-background-color: #121212;
-                  -fx-border-color: #535353;
-                  -fx-border-width: 1px;
-                  -fx-text-fill: white;
+                  -fx-text-fill: #ffffff;
                   -fx-font-size: 14px;
+                  -fx-border-color: rgba(255, 255, 255, 0.5);
+                  -fx-border-radius: 4px;
                   -fx-padding: 10px;"""
         maxWidth = 300
       }
 
+      // Next Button
       val nextButton = new Button("Next") {
-        style = """-fx-background-color: #1ED760;
+        style = """-fx-background-color: #1ed760;
                   -fx-text-fill: black;
                   -fx-font-size: 14px;
-                  -fx-padding: 10px 20px;
+                  -fx-font-family: 'Circular Std Bold';
                   -fx-border-radius: 25px;
-                  -fx-background-radius: 25px;"""
+                  -fx-padding: 10px;"""
         maxWidth = 300
       }
 
+      // OR Separator
       val separatorLabel = new Label("or") {
-        font = Font.font("Arial", FontWeight.Bold, 14)
-        textFill = Color.White
+        textFill = Color.web("#ffffff")
+        font = Font.font("Circular Std Medium", FontWeight.Normal, 12)
         alignment = Pos.Center
       }
 
+      val separator = new Separator {
+        style = "-fx-background-color: rgba(255, 255, 255, 0.5);"
+      }
+
+      // Social Buttons
       val googleButton = new Button("Sign up with Google") {
         style = """-fx-background-color: transparent;
-                  -fx-border-color: #535353;
-                  -fx-text-fill: white;
+                  -fx-border-color: rgba(255, 255, 255, 0.4);
+                  -fx-text-fill: #ffffff;
                   -fx-font-size: 14px;
-                  -fx-padding: 10px 20px;
                   -fx-border-radius: 25px;
-                  -fx-background-radius: 25px;"""
+                  -fx-padding: 10px;"""
         maxWidth = 300
       }
 
@@ -78,23 +96,29 @@ object SpotifySignUpPage extends JFXApp {
         maxWidth = 300
       }
 
+      // Already Have Account Link
       val loginLink = new Hyperlink("Already have an account? Log in here.") {
-        style = "-fx-text-fill: #1ED760; -fx-font-size: 12px;"
-        alignment = Pos.Center
+        style = "-fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px;"
       }
 
-      val privacyText = new Label("This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply.") {
-        style = "-fx-text-fill: #535353; -fx-font-size: 10px; -fx-wrap-text: true;"
-        alignment = Pos.Center
+      // Privacy Policy
+      val privacyLabel = new Label(
+        "This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply."
+      ) {
+        textFill = Color.web("#ffffff")
+        font = Font.font("Circular Std Light", FontWeight.Light, 10)
         wrapText = true
+        alignment = Pos.Center
         maxWidth = 300
       }
 
-      val cardLayout = new VBox(12) {
+      // Layout
+      val layout = new VBox(10) {
         padding = Insets(16)
         children = Seq(
           logoLabel,
           titleLabel,
+          emailLabel,
           emailField,
           nextButton,
           separatorLabel,
@@ -102,18 +126,16 @@ object SpotifySignUpPage extends JFXApp {
           facebookButton,
           appleButton,
           loginLink,
-          privacyText
+          privacyLabel
         )
-        alignment = Pos.Center
+        alignment = Pos.TopCenter
+        style = "-fx-background-color: #121212;" // Ensures the layout background matches the scene background
       }
 
-      val rootLayout = new VBox {
-        alignment = Pos.Center
-        padding = Insets(32)
-        children = Seq(cardLayout)
+      root = new StackPane {
+        children = Seq(layout)
+        style = "-fx-background-color: #121212;" // Ensures no light areas remain
       }
-
-      root = rootLayout
     }
   }
 }
