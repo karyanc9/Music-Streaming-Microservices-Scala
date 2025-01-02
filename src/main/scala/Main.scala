@@ -6,7 +6,7 @@ import actors.{MusicPlayerActor, SongLibraryActor, SystemIntegratorActor, UserSe
 import actors.UserServiceActor.{LoginUser, RegisterUser}
 import utils.FirebaseUtils
 import akka.actor.typed.ActorRef
-import protocols.SongProtocols.{AddSong, SearchSong}
+import protocols.SongProtocols.{SearchSong}
 
 
 object Main extends App {

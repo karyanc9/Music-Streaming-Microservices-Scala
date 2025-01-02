@@ -2,13 +2,16 @@ package main
 
 import akka.actor.typed.ActorSystem
 import actors.{MusicPlayerActor, SystemIntegratorActor}
+import akka.actor.typed.scaladsl.Behaviors
 import protocols.SongProtocols
+import protocols.SongProtocols.SearchSong
+import scalafx.Includes.jfxSceneProperty2sfx
 import scalafx.application.{JFXApp, Platform}
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.scene.Scene
-import scalafx.scene.layout.{GridPane, VBox}
+import scalafx.scene.layout.{BorderPane, GridPane, HBox, VBox}
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.control.Label
+import scalafx.scene.control.{Button, Label, TextField}
 import scalafx.geometry.{Insets, Pos}
 import utils.FirebaseUtils
 
@@ -27,7 +30,66 @@ object SongLibraryUI extends JFXApp {
     "SystemIntegratorActor"
   )
 
-// Fetch songs from Firebase and update the UI
+  //private var allSongs: List[SongData] = List() //storing all the songs fetched form firebase
+
+  //ui compononet
+  val searchField = new TextField {
+    promptText = "Search for a song..."
+    prefWidth = 300
+  }
+
+  val searchButton = new Button("Search") {
+    onAction = _ => handleSearch()
+  }
+
+  val gridPane = new GridPane {
+    hgap = 20
+    vgap = 20
+    padding = Insets(20)
+  }
+
+  val rootVBox = new VBox {
+    spacing = 10
+    padding = Insets(20)
+    alignment = Pos.TopCenter
+    children = Seq(
+      new HBox {
+        spacing = 10
+        alignment = Pos.Center
+        children = Seq(searchField, searchButton)
+      },
+      gridPane
+    )
+  }
+
+
+  //search for songs
+  def handleSearch(): Unit = {
+    val query = searchField.text.value
+    if (query.isEmpty) {
+      println("Search query is empty. Fetching all songs...")
+      fetchSongs
+    } else {
+      println(s"Searching for song: $query")
+      val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>
+        val songDataList = songs.map { song =>
+          val title = song.getOrElse("title", "Unknown").toString
+          val imagePath = song.getOrElse("imagePath", "Unknown").toString
+          val filePath = song.getOrElse("filePath", "Unknown").toString
+          SongData(title, imagePath, filePath)
+        }
+        Platform.runLater {
+          updateUI(songDataList)
+        }
+        Behaviors.stopped
+      }, "SearchReplyActor")
+
+      systemIntegrator ! SystemIntegratorActor.RouteToSongService(SearchSong(query, replyActor))
+    }
+  }
+
+
+  // Fetch songs from Firebase and update the UI
   def fetchSongs(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
     println("Starting to fetch songs from Firebase...")
     FirebaseUtils.fetchAllSongs().onComplete {
@@ -69,25 +131,62 @@ object SongLibraryUI extends JFXApp {
   }
 
   // Update the UI with the fetched songs
+//  def updateUI(songs: List[SongData])(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
+//    Platform.runLater {
+//      val gridPane = new GridPane {
+//        hgap = 20
+//        vgap = 20
+//        padding = Insets(20)
+//      }
+//
+//      songs.zipWithIndex.foreach { case (song, index) =>
+//        val row = index / 3
+//        val col = index % 3
+//        gridPane.add(createSongBox(song), col, row)
+//      }
+//
+//      stage.scene = new Scene {
+//        root = gridPane
+//      }
+//    }
+//  }
+
+  // Update the UI with the fetched songs
   def updateUI(songs: List[SongData])(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
     Platform.runLater {
-      val gridPane = new GridPane {
-        hgap = 20
-        vgap = 20
-        padding = Insets(20)
+      if (songs.isEmpty) {
+        println("No songs available to display.")
+        gridPane.children.clear() // Clear previous content
+        gridPane.add(new Label("No songs available."), 0, 0)
+      } else {
+        println(s"Displaying ${songs.size} songs.")
+        gridPane.children.clear() // Clear previous content
+        songs.zipWithIndex.foreach { case (song, index) =>
+          val row = index / 3
+          val col = index % 3
+          gridPane.add(createSongBox(song), col, row)
+        }
       }
 
-      songs.zipWithIndex.foreach { case (song, index) =>
-        val row = index / 3
-        val col = index % 3
-        gridPane.add(createSongBox(song), col, row)
-      }
+      // Ensure the rootVBox and gridPane are displayed properly
+      rootVBox.children = Seq(
+        new HBox {
+          spacing = 10
+          alignment = Pos.Center
+          children = Seq(searchField, searchButton)
+        },
+        gridPane
+      )
 
-      stage.scene = new Scene {
-        root = gridPane
+      // Check if the scene's root is not set, and set it only if necessary
+      if (stage.scene == null || stage.scene.root != rootVBox) {
+        stage.scene = new Scene(600, 400) {
+          root = rootVBox
+        }
       }
     }
   }
+
 
   // Define the primary stage
   stage = new PrimaryStage {
