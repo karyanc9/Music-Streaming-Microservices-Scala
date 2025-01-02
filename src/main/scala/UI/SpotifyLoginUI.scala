@@ -25,55 +25,39 @@ object SpotifyLoginUI extends JFXApp {
       }
 
       val titleLabel = new Label("Log in to Spotify") {
-        font = Font.font("SpotifyMixUITitle", FontWeight.Bold, 20)
+        font = Font.font("Circular Std Bold", FontWeight.Bold, 24)
         textFill = Color.web("#ffffff")
         alignment = Pos.Center
       }
 
       val googleButton = new Button("Continue with Google") {
         style = """-fx-background-color: transparent;
-                  -fx-border-color: #ffffff;
-                  -fx-border-width: 1px;
+                  -fx-border-color: rgba(255, 255, 255, 0.4);
                   -fx-text-fill: #ffffff;
                   -fx-font-size: 14px;
-                  -fx-padding: 8px 32px;
-                  -fx-border-radius: 24px;
-                  -fx-background-radius: 24px;"""
+                  -fx-border-radius: 25px;
+                  -fx-padding: 11px 10px;"""
         maxWidth = 300
       }
 
       val facebookButton = new Button("Continue with Facebook") {
-        style = """-fx-background-color: transparent;
-                  -fx-border-color: #ffffff;
-                  -fx-border-width: 1px;
-                  -fx-text-fill: #ffffff;
-                  -fx-font-size: 14px;
-                  -fx-padding: 8px 32px;
-                  -fx-border-radius: 24px;
-                  -fx-background-radius: 24px;"""
+        style = googleButton.style.value
         maxWidth = 300
       }
 
       val appleButton = new Button("Continue with Apple") {
-        style = """-fx-background-color: transparent;
-                  -fx-border-color: #ffffff;
-                  -fx-border-width: 1px;
-                  -fx-text-fill: #ffffff;
-                  -fx-font-size: 14px;
-                  -fx-padding: 8px 32px;
-                  -fx-border-radius: 24px;
-                  -fx-background-radius: 24px;"""
+        style = googleButton.style.value
         maxWidth = 300
       }
 
       val emailField = new TextField {
         promptText = "Email or username"
         style = """-fx-background-color: #121212;
-                  -fx-text-fill: #ffffff;
+                  -fx-text-fill: rgba(255, 255, 255, 0.5);
                   -fx-font-size: 14px;
-                  -fx-border-color: #7c7c7c;
+                  -fx-border-color: rgba(255, 255, 255, 0.5);
                   -fx-border-width: 1px;
-                  -fx-padding: 12px;"""
+                  -fx-padding: 11.5px;"""
         maxWidth = 300
       }
 
@@ -84,25 +68,24 @@ object SpotifyLoginUI extends JFXApp {
       }
 
       val loginButton = new Button("Log In") {
-        style = """-fx-background-color: #1ed760;
-                  -fx-text-fill: #ffffff;
-                  -fx-font-size: 14px;
-                  -fx-padding: 8px;
-                  -fx-border-radius: 24px;
-                  -fx-background-radius: 24px;"""
+        style = """-fx-background-color: rgba(30, 215, 96, 1);
+                  -fx-text-fill: black;
+                  -fx-font-family: 'Circular Std Bold';
+                  -fx-border-radius: 25px;
+                  -fx-padding: 11px;"""
         maxWidth = 300
       }
 
       val forgotPasswordLink = new Hyperlink("Forgot your password?") {
-        style = "-fx-text-fill: #ffffff; -fx-font-size: 12px;"
+        style = "-fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px;"
       }
 
       val signupLink = new Hyperlink("Sign up for Spotify") {
-        style = "-fx-text-fill: #1ed760; -fx-font-size: 12px;"
+        style = "-fx-text-fill: rgba(30, 215, 96, 1); -fx-font-size: 12px;"
       }
 
       val separator = new Separator {
-        style = "-fx-background-color: #7c7c7c;"
+        style = "-fx-background-color: rgba(255, 255, 255, 0.6);"
       }
 
       val cardLayout = new VBox(12) {
@@ -119,12 +102,12 @@ object SpotifyLoginUI extends JFXApp {
           loginButton,
           forgotPasswordLink,
           new Label("Don't have an account?") {
-            style = "-fx-text-fill: #b3b3b3; -fx-font-size: 12px;"
+            style = "-fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px;"
           },
           signupLink
         )
         alignment = Pos.Center
-        style = """-fx-background-color: #1f1f1f;
+        style = """-fx-background-color: black;
                   -fx-border-radius: 8px;
                   -fx-background-radius: 8px;"""
       }
