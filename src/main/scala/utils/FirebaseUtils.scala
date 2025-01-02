@@ -2,7 +2,8 @@ package utils
 
 import com.google.firebase.{FirebaseApp, FirebaseOptions}
 import com.google.firebase.auth.{FirebaseAuth, FirebaseAuthException, UserRecord}
-import com.google.firebase.database.{DataSnapshot, DatabaseError, DatabaseReference, FirebaseDatabase, ValueEventListener}
+import com.google.firebase.database.{DataSnapshot, DatabaseError, DatabaseReference, FirebaseDatabase, GenericTypeIndicator, ValueEventListener}
+
 import java.io.FileInputStream
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -106,7 +107,7 @@ object FirebaseUtils {
   }
 
   // Fetch all songs from Firebase
-  def fetchAllSongs(): Future[List[Map[String, Any]]] = {
+  def fetchAllSongsNOTUSED(): Future[List[Map[String, Any]]] = {
     val promise = Promise[List[Map[String, Any]]]()
     val songsRef = database.child("songs")
 
@@ -129,6 +130,53 @@ object FirebaseUtils {
 
     promise.future
   }
+
+  def fetchAllSongs(): Future[List[Map[String, Any]]] = {
+    initializeFirebase()
+    val promise = Promise[List[Map[String, Any]]]()
+    val songsRef = database.child("songs")
+
+    println("Fetching songs from Firebase...")
+
+    songsRef.addListenerForSingleValueEvent(new ValueEventListener {
+      override def onDataChange(snapshot: DataSnapshot): Unit = {
+        println(s"onDataChange triggered. Snapshot exists: ${snapshot.exists()}")
+
+        if (snapshot.exists()) {
+          println(s"Number of children: ${snapshot.getChildrenCount}")
+
+          val typeIndicator = new GenericTypeIndicator[java.util.Map[String, Any]]() {}
+          val songs = snapshot.getChildren.asScala.toList.collect {
+            case child =>
+              println(s"Processing child: ${child.getKey}")
+              try {
+                val songData = child.getValue(typeIndicator).asScala.toMap
+                println(s"Fetched child data: $songData")
+                songData
+              } catch {
+                case e: Exception =>
+                  println(s"Error processing child ${child.getKey}: ${e.getMessage}")
+                  null // Return null for problematic entries
+              }
+          }.filter(_ != null) // Remove null entries
+
+          println(s"Fetched songs: $songs")
+          promise.success(songs)
+        } else {
+          println("No songs found in Firebase.")
+          promise.success(Nil) // No songs available
+        }
+      }
+
+      override def onCancelled(error: DatabaseError): Unit = {
+        println(s"Error fetching songs: ${error.getMessage}")
+        promise.failure(new Exception(error.getMessage))
+      }
+    })
+
+    promise.future
+  }
+
 
   // Fetch playlist by playlistId from Firebase
   def getPlaylist(playlistId: String): Future[Option[Map[String, Any]]] = {
@@ -179,7 +227,7 @@ object FirebaseUtils {
   }
 
   // Save song metadata to Firebase
-  def saveSongMetadata(songId: String, metadata: Map[String, Any]): Future[Boolean] = {
+  def saveSongMetadataNOTUSED(songId: String, metadata: Map[String, Any]): Future[Boolean] = {
     val promise = Promise[Boolean]()
     val songRef = database.child("songs").child(songId)
 
@@ -199,8 +247,38 @@ object FirebaseUtils {
     promise.future
   }
 
+  def saveSongMetadata(songId: String, metadata: Map[String, Any]): Future[Boolean] = {
+    initializeFirebase()
+    val promise = Promise[Boolean]()
+    val songRef = database.child("songs").child(songId)
+
+    // Convert Scala Map to Java HashMap
+    val javaMetadata = new java.util.HashMap[String, Any]()
+    metadata.foreach { case (key, value) =>
+      javaMetadata.put(key, value)
+    }
+
+    val futureResult = songRef.setValueAsync(javaMetadata)
+    futureResult.addListener(new Runnable {
+      override def run(): Unit = {
+        try {
+          futureResult.get()
+          println(s"Song metadata saved successfully for songId: $songId")
+          promise.success(true)
+        } catch {
+          case e: Exception =>
+            println(s"Failed to save song metadata: ${e.getMessage}")
+            promise.failure(e)
+        }
+      }
+    }, scala.concurrent.ExecutionContext.global)
+
+    promise.future
+  }
+
+
   // Search for a song by title in Firebase
-  def searchSong(title: String): Future[List[Map[String, Any]]] = {
+  def searchSongNOTUSED(title: String): Future[List[Map[String, Any]]] = {
     val promise = Promise[List[Map[String, Any]]]()
     val songsRef = database.child("songs")
     val query = songsRef.orderByChild("title").equalTo(title)
@@ -219,6 +297,89 @@ object FirebaseUtils {
 
       override def onCancelled(error: DatabaseError): Unit = {
         promise.failure(new Exception(s"Firebase search failed: ${error.getMessage}"))
+      }
+    })
+
+    promise.future
+  }
+
+  def searchSong(title: String): Future[List[Map[String, Any]]] = {
+    initializeFirebase()
+    val promise = Promise[List[Map[String, Any]]]()
+    val songsRef = database.child("songs")
+    val query = database.child("songs").orderByChild("title").equalTo(title)
+    //val query: Query = songsRef.orderByChild("title").equalTo(title)
+
+    println(s"Searching for songs with title: $title")
+
+    query.addListenerForSingleValueEvent(new ValueEventListener {
+      //      override def onDataChange(snapshot: DataSnapshot): Unit = {
+      //        println(s"Snapshot exists: ${snapshot.exists()}")
+      //        if (snapshot.exists()) {
+      ////          println(s"Snapshot exists: ${snapshot.exists()} - Children count: ${snapshot.getChildrenCount}")
+      ////          snapshot.getChildren.asScala.toList.foreach { child =>
+      ////            println(s"Child data: ${child.getValue}")
+      ////          }
+      //          val result = snapshot.getChildren.asScala.toList.map { child =>
+      //            val songData = child.getValue(classOf[java.util.Map[String, Any]]).asInstanceOf[Map[String, Any]]
+      //            println(s"Parsed song: $songData")
+      //            songData
+      //          }
+      //          println(s"searchSong completed with: $result")
+      //          println("Invoking promise.success with result")
+      //          promise.success(result)
+      //        } else {
+      //          println("No matching songs found in Firebase.")
+      //          promise.success(Nil) // Return an empty list if no songs are found
+      //        }
+      //      }
+
+      override def onDataChange(snapshot: DataSnapshot): Unit = {
+        //println(s"Snapshot exists: ${snapshot.exists()}")
+        if (snapshot.exists()) {
+          //println(s"Raw snapshot data: ${snapshot.getValue}")
+          //println(s"Children count: ${snapshot.getChildrenCount}")
+
+          val result = snapshot.getChildren.asScala.toList.flatMap { child =>
+            //println(s"Processing child: ${child.getKey}")
+            val rawValue = child.getValue
+            //println(s"Raw child data: $rawValue, Type: ${rawValue.getClass}")
+
+            try {
+              // Use GenericTypeIndicator to handle generic types
+              val typeIndicator = new GenericTypeIndicator[java.util.Map[String, Any]]() {}
+              val songNode = child.getValue(typeIndicator)
+              if (songNode == null) {
+                println(s"Child has null data: ${child.getKey}")
+                None
+              } else {
+                val scalaData = songNode.asScala.toMap
+                //println(s"Parsed song: $scalaData")
+                Some(scalaData)
+              }
+            } catch {
+              case e: Exception =>
+                println(s"Error parsing child data: ${e.getMessage}")
+                None
+            }
+          }
+
+          if (result.isEmpty) {
+            println("No valid songs found, completing with empty list")
+            promise.success(Nil)
+          } else {
+            //println(s"Valid songs found: $result, completing promise")
+            promise.success(result)
+          }
+        } else {
+          println("No matching songs found in Firebase.")
+          promise.success(Nil)
+        }
+      }
+
+      override def onCancelled(error: DatabaseError): Unit = {
+        println(s"Error searching for song: ${error.getMessage}")
+        promise.failure(new Exception(error.getMessage))
       }
     })
 
