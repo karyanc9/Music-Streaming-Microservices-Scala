@@ -28,17 +28,15 @@ object SpotifySignUpPage extends JFXApp {
       // Title
       val titleLabel = new Label {
         text = "Sign up to\nstart listening"
-        font = Font.font("Circular Std Bold", FontWeight.Bold, 24)
-        textFill = Color.web("#ffffff")
+        style = "-fx-font-family: 'Circular Std'; -fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #ffffff; -fx-text-alignment: center;"
         alignment = Pos.Center
-        style = "-fx-text-alignment: center;"
       }
 
       // Email Address Label
       val emailLabel = new Label("Email address") {
-        textFill = Color.web("#ffffff")
-        font = Font.font("Circular Std Medium", FontWeight.Normal, 12)
+        style = "-fx-font-family: 'Circular Std'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #ffffff;"
         alignment = Pos.CenterLeft
+        maxWidth = 300
       }
 
       // Email Address Input
@@ -57,22 +55,25 @@ object SpotifySignUpPage extends JFXApp {
       val nextButton = new Button("Next") {
         style = """-fx-background-color: #1ed760;
                   -fx-text-fill: black;
+                  -fx-font-family: 'Circular Std';
                   -fx-font-size: 14px;
-                  -fx-font-family: 'Circular Std Bold';
                   -fx-border-radius: 25px;
                   -fx-padding: 10px;"""
         maxWidth = 300
+        onMouseEntered = _ => style = style.value.replace("#1ed760", "#2af879")
+        onMouseExited = _ => style = style.value.replace("#2af879", "#1ed760")
       }
 
       // OR Separator
-      val separatorLabel = new Label("or") {
-        textFill = Color.web("#ffffff")
-        font = Font.font("Circular Std Medium", FontWeight.Normal, 12)
+      val separatorBox = new HBox(5) {
         alignment = Pos.Center
-      }
-
-      val separator = new Separator {
-        style = "-fx-background-color: rgba(255, 255, 255, 0.5);"
+        children = Seq(
+          new Separator { maxWidth = 140; style = "-fx-background-color: rgba(255, 255, 255, 0.5);" },
+          new Label("or") {
+            style = "-fx-font-family: 'Circular Std'; -fx-font-size: 12px; -fx-text-fill: #ffffff;"
+          },
+          new Separator { maxWidth = 140; style = "-fx-background-color: rgba(255, 255, 255, 0.5);" }
+        )
       }
 
       // Social Buttons
@@ -80,6 +81,7 @@ object SpotifySignUpPage extends JFXApp {
         style = """-fx-background-color: transparent;
                   -fx-border-color: rgba(255, 255, 255, 0.4);
                   -fx-text-fill: #ffffff;
+                  -fx-font-family: 'Circular Std';
                   -fx-font-size: 14px;
                   -fx-border-radius: 25px;
                   -fx-padding: 10px;"""
@@ -97,16 +99,25 @@ object SpotifySignUpPage extends JFXApp {
       }
 
       // Already Have Account Link
-      val loginLink = new Hyperlink("Already have an account? Log in here.") {
-        style = "-fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px;"
+      val loginLink = new Hyperlink("Log in here") {
+        style = "-fx-font-family: 'Circular Std'; -fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px; -fx-underline: true;"
+      }
+
+      val alreadyHaveAccountLabel = new HBox(5) {
+        alignment = Pos.Center
+        children = Seq(
+          new Label("Already have an account?") {
+            style = "-fx-font-family: 'Circular Std'; -fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px;"
+          },
+          loginLink
+        )
       }
 
       // Privacy Policy
       val privacyLabel = new Label(
         "This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply."
       ) {
-        textFill = Color.web("#ffffff")
-        font = Font.font("Circular Std Light", FontWeight.Light, 10)
+        style = "-fx-font-family: 'Circular Std'; -fx-text-fill: #ffffff; -fx-font-size: 10px;"
         wrapText = true
         alignment = Pos.Center
         maxWidth = 300
@@ -121,20 +132,20 @@ object SpotifySignUpPage extends JFXApp {
           emailLabel,
           emailField,
           nextButton,
-          separatorLabel,
+          separatorBox,
           googleButton,
           facebookButton,
           appleButton,
-          loginLink,
+          alreadyHaveAccountLabel,
           privacyLabel
         )
-        alignment = Pos.TopCenter
-        style = "-fx-background-color: #121212;" // Ensures the layout background matches the scene background
+        alignment = Pos.Center
+        style = "-fx-background-color: #121212;"
       }
 
       root = new StackPane {
         children = Seq(layout)
-        style = "-fx-background-color: #121212;" // Ensures no light areas remain
+        style = "-fx-background-color: #121212;"
       }
     }
   }
