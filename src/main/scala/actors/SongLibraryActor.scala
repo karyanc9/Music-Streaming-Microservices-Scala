@@ -125,12 +125,10 @@ object SongLibraryActor {
       case SearchSong(title, replyTo) =>
         context.log.info(s"Searching for song with title: $title")
         val resultFuture = FirebaseUtils.searchSong(title)
-
 //        resultFuture.onComplete {
 //          case Success(songs) => println(s"searchSong Future completed with: $songs")
 //          case Failure(exception) => println(s"searchSong Future failed with: ${exception.getMessage}")
 //        }
-
         context.pipeToSelf(resultFuture) {
           case Success(songs) =>
             context.log.info(s"PipeToSelf sending WrappedSearchResult with: $songs")
