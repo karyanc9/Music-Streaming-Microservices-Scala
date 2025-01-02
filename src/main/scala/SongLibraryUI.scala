@@ -130,7 +130,7 @@ object SongLibraryUI extends JFXApp {
     }
   }
 
-  // Update the UI with the fetched songs
+  // Update the UI with the fetched songss
 //  def updateUI(songs: List[SongData])(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
 //    Platform.runLater {
 //      val gridPane = new GridPane {
