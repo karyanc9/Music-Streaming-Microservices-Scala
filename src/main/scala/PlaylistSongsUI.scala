@@ -6,7 +6,7 @@ import scalafx.application.Platform
 import scalafx.scene.Scene
 import scalafx.scene.layout.{BorderPane, GridPane, VBox}
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.control.{Alert, Button, Label, TextInputDialog}
+import scalafx.scene.control.{Alert, Button, Label, ScrollPane, TextInputDialog}
 import scalafx.scene.control.Alert.AlertType
 import scalafx.geometry.{Insets, Pos}
 import utils.FirebaseUtils
@@ -107,7 +107,17 @@ object PlaylistSongsUI {
         val col = index % 3
         gridPane.add(createSongBox(song, playlistId), col, row)
       }
-      contentPane.center = gridPane
+
+      // Wrap the gridPane in a ScrollPane
+      val scrollPane = new ScrollPane {
+        content = gridPane
+        fitToWidth = true // Ensures the ScrollPane adjusts to the parent's width
+        style = "-fx-background-color: #2A2A2A;" // Match the background color
+        hbarPolicy = ScrollPane.ScrollBarPolicy.Never // Disable horizontal scrollbar
+        vbarPolicy = ScrollPane.ScrollBarPolicy.AsNeeded // Enable vertical scrollbar as needed
+      }
+
+      contentPane.center = scrollPane
     }
 
     // Add "Add Song" button
@@ -122,7 +132,7 @@ object PlaylistSongsUI {
           | -fx-background-radius: 30;
           | -fx-padding: 10 30;
           | -fx-effect: dropshadow(three-pass-box, #000000, 5, 0, 0, 5);
-             """.stripMargin
+            """.stripMargin
       onAction = _ => {
         println(s"Adding song to playlist with ID: $playlistId")
         showAddSongDialog(playlistId)
@@ -132,7 +142,7 @@ object PlaylistSongsUI {
     contentPane.bottom = new VBox {
       alignment = Pos.Center
       spacing = 20
-      padding = Insets(20)
+      padding = Insets(26)
       children = Seq(addButton)
     }
 
@@ -142,6 +152,7 @@ object PlaylistSongsUI {
       }
     }
   }
+
 
   private def createSongBox(song: SongInfo, playlistId: String): VBox = {
     val imageView = new ImageView(new Image(new FileInputStream(song.imagePath))) {

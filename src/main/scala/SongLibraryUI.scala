@@ -11,13 +11,12 @@ import scalafx.application.JFXApp.PrimaryStage
 import scalafx.scene.Scene
 import scalafx.scene.layout.{BorderPane, GridPane, HBox, StackPane, VBox}
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.control.{Button, Label, ProgressIndicator, TextField}
+import scalafx.scene.control.{Button, Label, ProgressIndicator, ScrollPane, TextField}
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.effect.DropShadow
 import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
 import utils.FirebaseUtils
-
 
 import java.io.FileInputStream
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,9 +52,26 @@ object SongLibraryUI extends JFXApp {
     font = Font("Arial", 14)
   }
 
+  var searchTimer: Option[java.util.Timer] = None
+
+  // Debounce logic for the search field
+  def debounceSearch(): Unit = {
+    // Cancel any existing search action
+    searchTimer.foreach(_.cancel())
+
+    // Schedule a new search action after a delay of 500ms
+    searchTimer = Some(new java.util.Timer())
+    searchTimer.get.schedule(new java.util.TimerTask {
+      override def run(): Unit = {
+        handleSearch() // Call the handleSearch() method after the delay
+      }
+    }, 500) // Delay in milliseconds
+  }
+
+
   // Dynamically call handleSearch() when the text in the search bar changes
   searchField.text.onChange { (_, _, newValue) =>
-    handleSearch() // Call handleSearch() whenever the search text changes
+    debounceSearch()// Call handleSearch() whenever the search text changes
   }
 
 
@@ -92,11 +108,21 @@ object SongLibraryUI extends JFXApp {
         """
   }
 
+
+
   val gridPane = new GridPane {
     hgap = 20
     vgap = 20
     padding = Insets(20)
     alignment = Pos.Center
+  }
+
+  val scrollPane = new ScrollPane {
+    content = gridPane
+    fitToWidth = true // Ensures the scrollPane's width adjusts to the parent container
+    style = "-fx-background: #1E1E1E; -fx-border-color: transparent;" // Matches the background color of your app
+    hbarPolicy = ScrollPane.ScrollBarPolicy.Never // Disable horizontal scroll if you prefer
+    vbarPolicy = ScrollPane.ScrollBarPolicy.AsNeeded // Enable vertical scroll as needed
   }
 
   val rootVBox = new VBox {
@@ -110,7 +136,7 @@ object SongLibraryUI extends JFXApp {
         alignment = Pos.Center
         children = Seq(searchField, searchButton)
       },
-      gridPane
+      scrollPane
     )
   }
 
@@ -275,7 +301,7 @@ object SongLibraryUI extends JFXApp {
           alignment = Pos.Center
           children = Seq(searchField, searchButton)
         },
-        gridPane,
+        scrollPane,
         bottomMenu
       )
     }
@@ -348,7 +374,7 @@ object SongLibraryUI extends JFXApp {
             alignment = Pos.Center
             children = Seq(searchField, searchButton)
           },
-          gridPane,
+          scrollPane,
           bottomMenu
         )
       }

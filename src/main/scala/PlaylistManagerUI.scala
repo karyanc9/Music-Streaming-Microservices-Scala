@@ -7,7 +7,7 @@ import protocols.PlaylistProtocols.CreatePlaylist
 import scalafx.application.{JFXApp, Platform}
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.scene.Scene
-import scalafx.scene.layout.{HBox, VBox}
+import scalafx.scene.layout.{HBox, StackPane, VBox}
 import scalafx.scene.control.{Alert, Button, ButtonType, Dialog, Label, ListView, ProgressIndicator, ScrollPane, TextField}
 import scalafx.geometry.{Insets, Pos}
 import utils.FirebaseUtils
@@ -38,6 +38,16 @@ object PlaylistManagerUI extends JFXApp {
     "SystemIntegratorActor"
   )
 
+  val loadingSpinner = new ProgressIndicator {
+    style = "-fx-progress-color: #1DB954;"
+  }
+
+  val spinnerPane = new StackPane {
+    prefWidth = 600
+    prefHeight = 400
+    children = loadingSpinner
+    alignment = Pos.Center
+  }
 
   case class PlaylistData(id: String, name: String, songCount: Int)
 
@@ -247,19 +257,33 @@ object PlaylistManagerUI extends JFXApp {
         title = "Playlist Library"
         scene = new Scene(600, 600) {
           fill = Color.DarkGrey
-          content = new ProgressIndicator() {
-            minHeight = 100
-            minWidth = 100
-            maxWidth = 100
-            maxHeight = 100
-            progress = -1 // Infinite progress
-          }
         }
       }
     }
-    stage.show() // Show the primary stage of PlaylistManagerUI
-    fetchPlaylists
+    // Create the new spinner pane
+    val loadingSpinner = new ProgressIndicator {
+      style = "-fx-progress-color: #1DB954;" // Green color for the spinner
+    }
+
+    val spinnerPane = new StackPane {
+      prefWidth = 600
+      prefHeight = 400
+      children = loadingSpinner
+      alignment = Pos.Center
+    }
+
+    // Show the spinner while fetching the playlists
+    stage.scene = new Scene(600, 600) {
+      root = spinnerPane
+    }
+
+    fetchPlaylists // Fetch the playlists from Firebase
   }
+
+
+
+
+
 
   def deletePlaylist(playlistId: String): Unit = {
     val alert = new Alert(Alert.AlertType.Confirmation) {
