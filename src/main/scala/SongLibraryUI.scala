@@ -1,7 +1,7 @@
 package main
 
 import akka.actor.typed.ActorSystem
-import actors.{MusicPlayerActor, SystemIntegratorActor}
+import actors.{MusicPlayerActor, SongLibraryActor, SystemIntegratorActor}
 import akka.actor.typed.scaladsl.Behaviors
 import protocols.SongProtocols
 import protocols.SongProtocols.SearchSong
@@ -23,9 +23,10 @@ case class SongData(title: String, imagePath: String, filePath: String)
 object SongLibraryUI extends JFXApp {
 
   // Initialize the actors within the SongLibraryUI - libraeyy
+  val songLibrary: ActorSystem[protocols.SongProtocols.Command] = ActorSystem(SongLibraryActor(), "SongLibraryActor")
   val musicPlayerActor: ActorSystem[SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
   implicit val systemIntegrator: ActorSystem[SystemIntegratorActor.Command] = ActorSystem(
-    SystemIntegratorActor(null, null, musicPlayerActor),
+    SystemIntegratorActor(null, songLibrary, musicPlayerActor),
     "SystemIntegratorActor"
   )
 
@@ -63,19 +64,48 @@ object SongLibraryUI extends JFXApp {
 
 
   //search for songs
-  def handleSearch(): Unit = {
+  def handleSearch1(): Unit = {
     val query = searchField.text.value
     if (query.isEmpty) {
       println("Search query is empty. Fetching all songs...")
-      fetchSongs
+      fetchSongs // Fetch all songs if no search query is provided
     } else {
       println(s"Searching for song: $query")
+
+      // Reply Actor to handle the search result
       val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>
+        println(s"Received ${songs.size} songs from search query.")
         val songDataList = songs.map { song =>
           val title = song.getOrElse("title", "Unknown").toString
           val imagePath = song.getOrElse("imagePath", "Unknown").toString
           val filePath = song.getOrElse("filePath", "Unknown").toString
+          println(s"Song - Title: $title, ImagePath: $imagePath, FilePath: $filePath")
           SongData(title, imagePath, filePath)
+        }
+        Platform.runLater {
+          println("Updating UI with search results.")
+          updateUI(songDataList)
+        }
+        Behaviors.stopped
+      }, "SearchReplyActor")
+
+      systemIntegrator ! SystemIntegratorActor.RouteToSongService(
+        SearchSong(query, replyActor))
+    }
+  }
+
+  def handleSearch(): Unit = {
+    val query = searchField.text.value.trim
+    if (query.nonEmpty) {
+      println(s"Searching for song: $query") // Debugging log
+
+      val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>
+        val songDataList = songs.map { song =>
+          SongData(
+            title = song.getOrElse("title", "Unknown").toString,
+            imagePath = song.getOrElse("imagePath", "Unknown").toString,
+            filePath = song.getOrElse("filePath", "Unknown").toString
+          )
         }
         Platform.runLater {
           updateUI(songDataList)
@@ -83,6 +113,7 @@ object SongLibraryUI extends JFXApp {
         Behaviors.stopped
       }, "SearchReplyActor")
 
+      // Send the search request to SystemIntegratorActor
       systemIntegrator ! SystemIntegratorActor.RouteToSongService(SearchSong(query, replyActor))
     }
   }

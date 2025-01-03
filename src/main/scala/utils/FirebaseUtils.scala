@@ -303,11 +303,13 @@ object FirebaseUtils {
     promise.future
   }
 
-  def searchSong(title: String): Future[List[Map[String, Any]]] = {
+  def searchSongNOTUSED2(title: String): Future[List[Map[String, Any]]] = {
     initializeFirebase()
     val promise = Promise[List[Map[String, Any]]]()
     val songsRef = database.child("songs")
     val query = database.child("songs").orderByChild("title").equalTo(title)
+    // Normalize the title to lowercase for case-insensitive search
+    val normalizedTitle = title.toLowerCase
     //val query: Query = songsRef.orderByChild("title").equalTo(title)
 
     println(s"Searching for songs with title: $title")
@@ -354,8 +356,14 @@ object FirebaseUtils {
                 None
               } else {
                 val scalaData = songNode.asScala.toMap
+                // Case-insensitive title search
+                if (scalaData.get("title").exists(_.toString.toLowerCase.contains(normalizedTitle))) {
+                  Some(scalaData)
+                } else {
+                  None
+                }
                 //println(s"Parsed song: $scalaData")
-                Some(scalaData)
+                //Some(scalaData)
               }
             } catch {
               case e: Exception =>
@@ -363,6 +371,8 @@ object FirebaseUtils {
                 None
             }
           }
+
+
 
           if (result.isEmpty) {
             println("No valid songs found, completing with empty list")
@@ -385,6 +395,73 @@ object FirebaseUtils {
 
     promise.future
   }
+
+  def searchSong(title: String): Future[List[Map[String, Any]]] = {
+    initializeFirebase()
+    val promise = Promise[List[Map[String, Any]]]()
+
+    // Normalize the title to lowercase for case-insensitive search
+    val normalizedTitle = title.toLowerCase
+
+    println(s"Searching for songs with title: $title (case-insensitive)")
+
+    // Firebase query for all songs
+    val songsRef = database.child("songs")
+
+    songsRef.addListenerForSingleValueEvent(new ValueEventListener {
+      override def onDataChange(snapshot: DataSnapshot): Unit = {
+        if (snapshot.exists()) {
+          println(s"Snapshot exists: ${snapshot.exists()}")
+
+          // Iterate through each child node and filter by case-insensitive title match
+          val result = snapshot.getChildren.asScala.toList.flatMap { child =>
+            val rawValue = child.getValue
+            try {
+              val typeIndicator = new GenericTypeIndicator[java.util.Map[String, Any]]() {}
+              val songNode = child.getValue(typeIndicator)
+              if (songNode == null) {
+                println(s"Child has null data: ${child.getKey}")
+                None
+              } else {
+                val scalaData = songNode.asScala.toMap
+                // Case-insensitive title search
+                scalaData.get("title") match {
+                  case Some(titleData: String) if titleData.toLowerCase.contains(normalizedTitle) =>
+                    Some(scalaData) // Title matches, include the song
+                  case _ =>
+                    None // Title doesn't match, exclude the song
+                }
+              }
+            } catch {
+              case e: Exception =>
+                println(s"Error parsing child data: ${e.getMessage}")
+                None
+            }
+          }
+
+          if (result.isEmpty) {
+            println("No matching songs found.")
+            promise.success(Nil) // Complete with empty list if no matches
+          } else {
+            println(s"Found ${result.size} matching song(s).")
+            promise.success(result) // Complete with filtered results
+          }
+        } else {
+          println("No matching songs found in Firebase.")
+          promise.success(Nil) // Complete with empty list if no songs exist
+        }
+      }
+
+      override def onCancelled(error: DatabaseError): Unit = {
+        println(s"Error searching for song: ${error.getMessage}")
+        promise.failure(new Exception(error.getMessage)) // Complete with failure if cancelled
+      }
+    })
+
+    // Return the future from the Promise
+    promise.future
+  }
+
 
   // Register a new user with Firebase Authentication
   def registerUser(username: String, password: String): Future[Option[String]] = {

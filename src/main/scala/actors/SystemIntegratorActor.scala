@@ -21,9 +21,20 @@ object SystemIntegratorActor {
         replyTo ! "Message routed to UserService"
         Behaviors.same
 
+//      case RouteToSongService(msg) =>
+//        songService ! msg
+//        context.log.info(s"Message routed to SongService: $msg")
+//        Behaviors.same
+
       case RouteToSongService(msg) =>
-        songService ! msg
-        context.log.info(s"Message routed to SongService: $msg")
+        msg match {
+          case search: SongProtocols.SearchSong =>
+            context.log.info(s"Routing SearchSong message to SongService: ${search.title}")
+            songService ! search
+          case other =>
+            context.log.info(s"Routing other SongService message: $other")
+            songService ! other
+        }
         Behaviors.same
 
       case RouteToMusicPlayer(msg) =>
