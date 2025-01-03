@@ -3,6 +3,7 @@ package UI
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import actors.UserServiceActor.LoginUser
+import main.SongLibraryUI
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.geometry.{Insets, Pos}
@@ -15,7 +16,7 @@ import scalafx.scene.paint.Color
 object SpotifyLoginUI extends JFXApp {
 
   // Actor reference for UserServiceActor (Replace with your actual system setup if necessary)
-  val userService: ActorSystem[actors.UserServiceActor.Command] = ActorSystem(actors.UserServiceActor(), "UserServiceActor")
+  lazy val userService: ActorSystem[actors.UserServiceActor.Command] = ActorSystem(actors.UserServiceActor(), "UserServiceActor")
 
   stage = new PrimaryStage {
     title = "Spotify - Log In"
@@ -118,19 +119,22 @@ object SpotifyLoginUI extends JFXApp {
         onAction = _ => {
           val username = emailField.text.value
           val password = passwordField.text.value
-
           // Validate inputs
           if (username.isEmpty || password.isEmpty) {
             feedbackLabel.text = "Please enter both email and password."
           } else {
             feedbackLabel.text = "Logging in..."
-            // Create a temporary actor to handle responses
             val replyActor = ActorSystem(Behaviors.receiveMessage[String] { response =>
-              feedbackLabel.text = response
+              if (response == "successful") {
+                // Transition to SongLibraryUI
+
+              } else {
+                // Display error message directly in the feedback label
+                feedbackLabel.text = response
+              }
               Behaviors.stopped
             }, "LoginReplyActor")
 
-            // Send login command to UserServiceActor
             userService ! LoginUser(username, password, replyActor)
           }
         }
@@ -139,6 +143,8 @@ object SpotifyLoginUI extends JFXApp {
       // Forgot Password
       val forgotPasswordLink = new Hyperlink("Forgot your password?") {
         style = "-fx-font-family: 'Circular Std'; -fx-font-weight: bold; -fx-text-fill: white; -fx-underline: true;"
+        onAction = _ => {
+        }
       }
 
       // Sign Up Link

@@ -3,6 +3,7 @@ package UI
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import actors.UserServiceActor.RegisterUser
+import main.SongLibraryUI
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.geometry.{Insets, Pos}
@@ -15,7 +16,7 @@ import scalafx.scene.paint.Color
 object SpotifySignUpUI extends JFXApp {
 
   // Actor reference for UserServiceActor
-  val userService: ActorSystem[actors.UserServiceActor.Command] = ActorSystem(actors.UserServiceActor(), "UserServiceActor")
+  lazy val userService: ActorSystem[actors.UserServiceActor.Command] = ActorSystem(actors.UserServiceActor(), "UserServiceActor")
 
   stage = new PrimaryStage {
     title = "Spotify - Sign Up"

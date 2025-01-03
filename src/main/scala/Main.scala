@@ -1,5 +1,6 @@
 package main
 
+import UI.SpotifyLoginUI
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import actors.{MusicPlayerActor, PlaylistServiceActor, SongLibraryActor, SystemIntegratorActor, UserServiceActor}
@@ -25,7 +26,7 @@ object Main extends App {
   )
 
   // Launch App
-  SongLibraryUI.main(Array())
+  SpotifyLoginUI.main(Array())
 
 
 }
