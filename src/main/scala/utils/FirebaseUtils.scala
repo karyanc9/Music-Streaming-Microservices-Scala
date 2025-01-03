@@ -94,22 +94,26 @@ object FirebaseUtils {
   }
 
   /** Register a new user with Firebase Authentication */
+
+  /** Register a new user with Firebase Authentication */
   def registerUser(username: String, password: String): Future[Option[String]] = {
     initializeFirebase()
     val promise = Promise[Option[String]]()
 
-    Try {
+    Future {
       val userRecord = firebaseAuth.createUser(
         new UserRecord.CreateRequest()
           .setEmail(username)
           .setPassword(password)
       )
-      promise.success(Some(s"User ${userRecord.getEmail} registered successfully."))
-    } match {
-      case Success(_) => // Success handled above
+      userRecord // Return the created UserRecord
+    }.onComplete {
+      case Success(userRecord) =>
+        println(s"User ${userRecord.getEmail} registered successfully.") // Log success
+        promise.success(Some(s"User ${userRecord.getEmail} registered successfully.")) // Resolve promise with success message
       case Failure(exception) =>
-        println(s"Failed to register user: ${exception.getMessage}")
-        promise.success(None)
+        println(s"Failed to register user: ${exception.getMessage}") // Log failure
+        promise.success(None) // Resolve promise with None in case of failure
     }
 
     promise.future

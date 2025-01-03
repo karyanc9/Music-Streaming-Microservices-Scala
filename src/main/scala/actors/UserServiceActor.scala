@@ -21,10 +21,17 @@ object UserServiceActor {
 
     Behaviors.receiveMessage {
       case RegisterUser(username, password, replyTo) =>
+        context.log.info(s"Received RegisterUser command for username: $username") // Log the command
         context.pipeToSelf(FirebaseUtils.registerUser(username, password)) {
-          case Success(Some(message)) => WrappedResultString(Right(message), replyTo)
-          case Success(None)          => WrappedResultString(Right("Registration failed."), replyTo)
-          case Failure(exception)     => WrappedResultString(Left(exception), replyTo)
+          case Success(Some(message)) =>
+            context.log.info(s"Registration succeeded: $message") // Log success
+            WrappedResultString(Right(message), replyTo)
+          case Success(None) =>
+            context.log.warn("Registration failed: No response from Firebase") // Use `warn` instead of `warning`
+            WrappedResultString(Right("Registration failed. Please try again."), replyTo)
+          case Failure(exception) =>
+            context.log.error(s"Registration failed with exception: ${exception.getMessage}") // Log exception
+            WrappedResultString(Left(exception), replyTo)
         }
         Behaviors.same
 
@@ -46,10 +53,12 @@ object UserServiceActor {
       case WrappedResultString(result, replyTo) =>
         result match {
           case Right(response) =>
-            replyTo ! response
+            context.log.info(s"Operation succeeded with response: $response") // Log success
+            replyTo ! response // Send the success message back to the UI
           case Left(exception) =>
-            context.log.error(s"Operation failed: ${exception.getMessage}")
-            replyTo ! s"Error: ${exception.getMessage}"
+            val errorMessage = s"Error: ${exception.getMessage}"
+            context.log.error(s"Operation failed with error: $errorMessage") // Log failure
+            replyTo ! errorMessage // Send the error message back to the UI
         }
         Behaviors.same
 
