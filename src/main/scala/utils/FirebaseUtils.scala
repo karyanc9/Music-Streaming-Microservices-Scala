@@ -394,9 +394,9 @@ object FirebaseUtils {
                 null // Skip problematic entries
             }
             //child.getValue(classOf[java.util.Map[String, Any]]).asScala.toMap
-//            val songData = child.getValue(classOf[java.util.Map[String, Any]]).asScala.toMap
-//            println(s"Song data: $songData")
-//            songData
+            //            val songData = child.getValue(classOf[java.util.Map[String, Any]]).asScala.toMap
+            //            println(s"Song data: $songData")
+            //            songData
           }.filter(_ != null)
           println(s"Fetched songs: $songs")
           promise.success(songs)
@@ -518,7 +518,7 @@ object FirebaseUtils {
         if (snapshot.exists()) {
           println(s"Snapshot exists for playlist ID: $playlistId. Data: ${snapshot.getValue}")
 
-          // Fetch each song as a nested object under `songs`
+          // Fetch each song as a nested object under songs
           val rawData = snapshot.getValue.asInstanceOf[java.util.Map[String, java.util.Map[String, Object]]]
 
           // If data is a map of songId -> songData
@@ -671,12 +671,24 @@ object FirebaseUtils {
   }
 
 
+  /** Tie Logic to UI: Register User */
+  def registerUserUI(username: String, password: String): Future[String] = {
+    registerUser(username, password).map {
+      case Some(message) => s"Registration successful: $message"
+      case None => "Registration failed. Please try again."
+    }
+  }
+
+  /** Tie Logic to UI: Login User */
+  def loginUserUI(username: String, password: String): Future[String] = {
+    loginUser(username, password).map {
+      case Some(message) => s"Login successful: $message"
+      case None => "Login failed. Please check your credentials."
+    }
+  }
 
 
 }
-
-
-
 
 
 

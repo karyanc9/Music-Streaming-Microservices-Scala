@@ -3,7 +3,7 @@ package main
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import actors.{MusicPlayerActor, PlaylistServiceActor, SongLibraryActor, SystemIntegratorActor, UserServiceActor}
-import actors.UserServiceActor.{LoginUser, RegisterUser}
+import actors.UserServiceActor.{LoginUser, RegisterUser, ValidateSession, DeleteUser, UpdatePassword}
 import utils.FirebaseUtils
 import akka.actor.typed.ActorRef
 import protocols.SongProtocols.{AddSong, SearchSong}
@@ -18,7 +18,6 @@ object Main extends App {
   val musicPlayerActor: ActorSystem[protocols.SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
   val playlistServiceActor: ActorRef[protocols.PlaylistProtocols.Command] = ActorSystem(PlaylistServiceActor(), "PlaylistServiceActor")
 
-
   // Initialize SystemIntegratorActor, passing all required actors
   implicit val systemIntegrator: ActorRef[SystemIntegratorActor.Command] = ActorSystem(
     SystemIntegratorActor(userService, songLibrary, playlistServiceActor, musicPlayerActor),
@@ -30,6 +29,7 @@ object Main extends App {
   println("1. Register a new user")
   println("2. Login existing user")
   println("3. Search for a song")
+  println("4. Validate session")
 
   val choice = scala.io.StdIn.readInt()
 
@@ -92,6 +92,44 @@ object Main extends App {
       systemIntegrator ! SystemIntegratorActor.RouteToSongService(
         SearchSong(title, replyActor)
       )
+
+    case 4 =>
+      println("Enter session token to validate:")
+      val token = scala.io.StdIn.readLine()
+
+      val replyActor = ActorSystem(Behaviors.receiveMessage[Boolean] { isValid =>
+        println(if (isValid) "Session is valid." else "Session is invalid.")
+        Behaviors.stopped
+      }, "ValidateSessionReplyActor")
+
+      // Send ValidateSession command to the UserServiceActor
+      userService ! ValidateSession(token, replyActor)
+
+    case 5 =>
+      println("Enter username (email):")
+      val username = scala.io.StdIn.readLine()
+      println("Enter new password:")
+      val newPassword = scala.io.StdIn.readLine()
+
+      val replyActor = ActorSystem(Behaviors.receiveMessage[String] { response =>
+        println(response) // Print the response from Firebase
+        Behaviors.stopped
+      }, "UpdatePasswordReplyActor")
+
+      // Send UpdatePassword command to the UserServiceActor
+      userService ! UpdatePassword(username, newPassword, replyActor)
+
+    case 6 =>
+      println("Enter username (email) to delete:")
+      val username = scala.io.StdIn.readLine()
+
+      val replyActor = ActorSystem(Behaviors.receiveMessage[String] { response =>
+        println(response) // Print the response from Firebase
+        Behaviors.stopped
+      }, "DeleteUserReplyActor")
+
+      // Send DeleteUser command to the UserServiceActor
+      userService ! DeleteUser(username, replyActor)
 
     case _ =>
       println("Invalid choice")

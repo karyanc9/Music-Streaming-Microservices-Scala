@@ -1,5 +1,8 @@
 package UI
 
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import actors.UserServiceActor.RegisterUser
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.geometry.{Insets, Pos}
@@ -11,6 +14,9 @@ import scalafx.scene.layout._
 import scalafx.scene.paint.Color
 
 object SpotifySignUpUI extends JFXApp {
+
+  // Actor reference for UserServiceActor (Replace with your actual system setup if necessary)
+  val userService: ActorSystem[actors.UserServiceActor.Command] = ActorSystem(actors.UserServiceActor(), "UserServiceActor")
 
   stage = new PrimaryStage {
     title = "Spotify - Sign Up"
@@ -74,6 +80,15 @@ object SpotifySignUpUI extends JFXApp {
         maxWidth = 300
       }
 
+      // Feedback Label
+      val feedbackLabel = new Label {
+        text = ""
+        style = "-fx-font-family: 'Circular Std'; -fx-font-size: 12px; -fx-text-fill: white;"
+        alignment = Pos.Center
+        maxWidth = 300
+        wrapText = true
+      }
+
       // Next Button
       val nextButton = new Button("Next") {
         style = """-fx-background-color: #1ed760;
@@ -86,6 +101,28 @@ object SpotifySignUpUI extends JFXApp {
         maxWidth = 300
         onMouseEntered = _ => style = style.value.replace("#1ed760", "#2af879")
         onMouseExited = _ => style = style.value.replace("#2af879", "#1ed760")
+        onAction = _ => {
+          val username = emailField.text.value
+          val password = passwordField.text.value
+
+          // Validate inputs
+          if (username.isEmpty || password.isEmpty) {
+            feedbackLabel.text = "Please enter both email and password."
+          } else {
+            feedbackLabel.text = "Signing up..."
+            // Create a temporary actor to handle responses
+            val replyActor = ActorSystem(Behaviors.receiveMessage[String] { response =>
+              feedbackLabel.text = response
+              if (response.contains("successfully")) {
+                stage.scene = SpotifyLoginUI.createLoginScene(stage) // Navigate to Login Screen
+              }
+              Behaviors.stopped
+            }, "SignUpReplyActor")
+
+            // Send RegisterUser command to UserServiceActor
+            userService ! RegisterUser(username, password, replyActor)
+          }
+        }
       }
 
       // OR Separator
@@ -187,6 +224,7 @@ object SpotifySignUpUI extends JFXApp {
           passwordLabel,
           passwordField,
           nextButton,
+          feedbackLabel,
           separatorBox,
           googleButton,
           facebookButton,

@@ -1,5 +1,8 @@
 package UI
 
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import actors.UserServiceActor.LoginUser
 import scalafx.application.JFXApp
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.geometry.{Insets, Pos}
@@ -10,6 +13,9 @@ import scalafx.scene.layout._
 import scalafx.scene.paint.Color
 
 object SpotifyLoginUI extends JFXApp {
+
+  // Actor reference for UserServiceActor (Replace with your actual system setup if necessary)
+  val userService: ActorSystem[actors.UserServiceActor.Command] = ActorSystem(actors.UserServiceActor(), "UserServiceActor")
 
   stage = new PrimaryStage {
     title = "Spotify - Log In"
@@ -88,6 +94,15 @@ object SpotifyLoginUI extends JFXApp {
         alignment = Pos.CenterLeft
       }
 
+      // Feedback Label
+      val feedbackLabel = new Label {
+        text = ""
+        style = "-fx-font-family: 'Circular Std'; -fx-font-size: 12px; -fx-text-fill: white;"
+        alignment = Pos.Center
+        maxWidth = 300
+        wrapText = true
+      }
+
       // Log In Button
       val loginButton = new Button("Log In") {
         style = """-fx-background-color: #1ed760;
@@ -100,6 +115,25 @@ object SpotifyLoginUI extends JFXApp {
         maxWidth = 300
         onMouseEntered = _ => style = style.value.replace("#1ed760", "#2af879")
         onMouseExited = _ => style = style.value.replace("#2af879", "#1ed760")
+        onAction = _ => {
+          val username = emailField.text.value
+          val password = passwordField.text.value
+
+          // Validate inputs
+          if (username.isEmpty || password.isEmpty) {
+            feedbackLabel.text = "Please enter both email and password."
+          } else {
+            feedbackLabel.text = "Logging in..."
+            // Create a temporary actor to handle responses
+            val replyActor = ActorSystem(Behaviors.receiveMessage[String] { response =>
+              feedbackLabel.text = response
+              Behaviors.stopped
+            }, "LoginReplyActor")
+
+            // Send login command to UserServiceActor
+            userService ! LoginUser(username, password, replyActor)
+          }
+        }
       }
 
       // Forgot Password
@@ -148,6 +182,7 @@ object SpotifyLoginUI extends JFXApp {
           passwordLabel,
           passwordField,
           loginButton,
+          feedbackLabel,
           forgotPasswordLink,
           signUpLink,
           privacyLabel
