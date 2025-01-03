@@ -1,9 +1,9 @@
 package main
 
 import akka.actor.typed.ActorSystem
-import actors.{MusicPlayerActor, SongLibraryActor, SystemIntegratorActor}
+import actors.{MusicPlayerActor, PlaylistServiceActor, SongLibraryActor, SystemIntegratorActor}
 import akka.actor.typed.scaladsl.Behaviors
-import protocols.SongProtocols
+import protocols.{PlaylistProtocols, SongProtocols}
 import protocols.SongProtocols.SearchSong
 import scalafx.Includes.jfxSceneProperty2sfx
 import scalafx.application.{JFXApp, Platform}
@@ -18,19 +18,22 @@ import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
 import utils.FirebaseUtils
 
+
 import java.io.FileInputStream
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
-case class SongData(title: String, imagePath: String, filePath: String)
 
 object SongLibraryUI extends JFXApp {
+
+  case class SongData(title: String, imagePath: String, filePath: String)
 
   // Initialize the actors within the SongLibraryUI - libraeyy
   val songLibrary: ActorSystem[protocols.SongProtocols.Command] = ActorSystem(SongLibraryActor(), "SongLibraryActor")
   val musicPlayerActor: ActorSystem[SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
+  val playlistServiceActor: ActorSystem[PlaylistProtocols.Command] = ActorSystem(PlaylistServiceActor(), "PlaylistServiceActor")
   implicit val systemIntegrator: ActorSystem[SystemIntegratorActor.Command] = ActorSystem(
-    SystemIntegratorActor(null, songLibrary, null, musicPlayerActor),
+    SystemIntegratorActor(null, songLibrary, playlistServiceActor, musicPlayerActor),
     "SystemIntegratorActor"
   )
 
@@ -54,6 +57,8 @@ object SongLibraryUI extends JFXApp {
   searchField.text.onChange { (_, _, newValue) =>
     handleSearch() // Call handleSearch() whenever the search text changes
   }
+
+
 
   val searchButton = new Button("Search") {
     onAction = _ => handleSearch()
@@ -140,6 +145,31 @@ object SongLibraryUI extends JFXApp {
         SearchSong(query, replyActor))
     }
   }
+
+  // Define the bottom menu with "Songs" and "Playlists" buttons
+  val bottomMenu = new HBox {
+    spacing = 20
+    alignment = Pos.Center
+    padding = Insets(10)
+    style = "-fx-background-color: #1E1E1E;"
+    children = Seq(
+      new Button("Playlists") {
+        style =
+          """
+          -fx-background-color: #1DB954;
+          -fx-text-fill: #FFFFFF;
+          -fx-font-size: 14px;
+          -fx-background-radius: 15;
+          """
+        onAction = _ => PlaylistManagerUI.showPlaylistManager()
+      }
+    )
+  }
+
+
+
+  // Add the bottom menu to the main layout
+  rootVBox.children.add(bottomMenu)
 
   def handleSearch3(): Unit = {
     val query = searchField.text.value.trim
@@ -232,6 +262,30 @@ object SongLibraryUI extends JFXApp {
     }
   }
 
+  def createSongLibraryScene(): Scene = {
+    // Create a fresh VBox for every new scene
+    val rootVBox = new VBox {
+      spacing = 10
+      padding = Insets(20)
+      alignment = Pos.TopCenter
+      style = "-fx-background-color: #1E1E1E;"
+      children = Seq(
+        new HBox {
+          spacing = 10
+          alignment = Pos.Center
+          children = Seq(searchField, searchButton)
+        },
+        gridPane,
+        bottomMenu
+      )
+    }
+
+    // Return a new scene with the fresh VBox
+    new Scene(600, 400) {
+      root = rootVBox
+    }
+  }
+
   // Create a song box with image and title
   def createSongBox(song: SongData)(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): VBox = {
     val imageView = new ImageView(new Image(new FileInputStream(song.imagePath))) {
@@ -281,25 +335,34 @@ object SongLibraryUI extends JFXApp {
         }
       }
 
-      // Ensure the rootVBox and gridPane are displayed properly
-      rootVBox.children = Seq(
-        new HBox {
-          spacing = 10
-          alignment = Pos.Center
-          children = Seq(searchField, searchButton)
-        },
-        gridPane
-      )
+      // Recreate the VBox and Scene when updating UI
+      val newRootVBox = new VBox {
+        spacing = 10
+        padding = Insets(20)
+        alignment = Pos.TopCenter
+        style = "-fx-background-color: #1E1E1E;"
 
-      // Check if the scene's root is not set, and set it only if necessary
-      if (stage.scene == null || stage.scene.root != rootVBox) {
-        stage.scene = new Scene(600, 400) {
-          root = rootVBox
-        }
+        children = Seq(
+          new HBox {
+            spacing = 10
+            alignment = Pos.Center
+            children = Seq(searchField, searchButton)
+          },
+          gridPane,
+          bottomMenu
+        )
       }
 
+      // Create a new scene with the updated VBox
+      val newScene = new Scene(600, 400) {
+        root = newRootVBox
+      }
+
+      // Set the new scene to the stage
+      stage.scene = newScene
     }
   }
+
 
   val loadingSpinner = new ProgressIndicator {
     style = "-fx-progress-color: #1DB954;"

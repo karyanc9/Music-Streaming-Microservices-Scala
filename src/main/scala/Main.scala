@@ -3,7 +3,7 @@ package main
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import actors.{MusicPlayerActor, PlaylistServiceActor, SongLibraryActor, SystemIntegratorActor, UserServiceActor}
-import actors.UserServiceActor.{LoginUser, RegisterUser, ValidateSession, DeleteUser, UpdatePassword}
+import actors.UserServiceActor.{DeleteUser, LoginUser, RegisterUser, UpdatePassword, ValidateSession}
 import utils.FirebaseUtils
 import akka.actor.typed.ActorRef
 import protocols.SongProtocols.{AddSong, SearchSong}

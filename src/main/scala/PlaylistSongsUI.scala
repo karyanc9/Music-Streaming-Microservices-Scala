@@ -1,3 +1,5 @@
+package main
+
 import PlaylistManagerUI.systemIntegrator
 import actors.{MusicPlayerActor, PlaylistServiceActor, SystemIntegratorActor}
 import scalafx.application.Platform
@@ -241,7 +243,7 @@ object PlaylistSongsUI {
   }
 
   // Show the PlaylistSongsUI with fixed window size
-  def show(playlistId: String, serviceActor: ActorRef[PlaylistProtocols.Command]): Unit = {
+  def show(playlistId: String, serviceActor: ActorRef[PlaylistProtocols.Command], callback: () => Unit): Unit = {
     val stage = new scalafx.stage.Stage {
       title = "Playlist Songs"
       width = 600 // Fixed width
@@ -253,6 +255,9 @@ object PlaylistSongsUI {
     }
     stageRef = Some(stage)
     fetchPlaylistSongs(playlistId)
+
+    stage.setOnCloseRequest(_ => callback())
+
     stage.show()
   }
 }

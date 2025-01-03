@@ -7,6 +7,7 @@ import scalafx.scene.layout.{HBox, VBox}
 import scalafx.stage.Stage
 import akka.actor.typed.ActorRef
 import actors.SystemIntegratorActor
+import main.SongLibraryUI.SongData
 import protocols.SongProtocols.{PauseSong, PlaySong}
 import scalafx.geometry.Pos
 import models.SongInfo

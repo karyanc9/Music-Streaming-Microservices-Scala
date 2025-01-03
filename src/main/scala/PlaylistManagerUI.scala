@@ -1,37 +1,43 @@
+package main
+
 import akka.actor.typed.ActorSystem
-import actors.{PlaylistServiceActor, SystemIntegratorActor}
-import protocols.PlaylistProtocols
+import actors.{MusicPlayerActor, PlaylistServiceActor, SongLibraryActor, SystemIntegratorActor}
+import protocols.{PlaylistProtocols, SongProtocols}
 import protocols.PlaylistProtocols.CreatePlaylist
 import scalafx.application.{JFXApp, Platform}
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.scene.Scene
-import scalafx.scene.layout.VBox
+import scalafx.scene.layout.{HBox, VBox}
 import scalafx.scene.control.{Alert, Button, ButtonType, Dialog, Label, ListView, ProgressIndicator, ScrollPane, TextField}
 import scalafx.geometry.{Insets, Pos}
 import utils.FirebaseUtils
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
+
 import scala.concurrent.duration._
 import akka.actor.typed.ActorRef
+import main.SongLibraryUI.rootVBox
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import scalafx.collections.ObservableBuffer
 import scalafx.scene.paint.Color
+
 import scala.jdk.CollectionConverters._
 import scala.reflect.internal.util.NoSourceFile.content
-
-case class PlaylistData(name: String, songCount: Int)
 
 object PlaylistManagerUI extends JFXApp {
 
   FirebaseUtils.initializeFirebase()
 
-  // Initialize the actors within the PlaylistUI
-  val playlistServiceActor: ActorSystem[PlaylistProtocols.Command] = ActorSystem(PlaylistServiceActor(), "PlaylistServiceActor")
-  implicit val systemIntegrator: ActorSystem[SystemIntegratorActor.Command] = ActorSystem(
-    SystemIntegratorActor(null, null, playlistServiceActor, null),
+  lazy val songLibrary: ActorSystem[protocols.SongProtocols.Command] = ActorSystem(SongLibraryActor(), "SongLibraryActor")
+  lazy val musicPlayerActor: ActorSystem[SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
+  lazy val playlistServiceActor: ActorSystem[PlaylistProtocols.Command] = ActorSystem(PlaylistServiceActor(), "PlaylistServiceActor")
+  lazy implicit val systemIntegrator: ActorSystem[SystemIntegratorActor.Command] = ActorSystem(
+    SystemIntegratorActor(null, songLibrary, playlistServiceActor, musicPlayerActor),
     "SystemIntegratorActor"
   )
+
 
   case class PlaylistData(id: String, name: String, songCount: Int)
 
@@ -70,11 +76,6 @@ object PlaylistManagerUI extends JFXApp {
           updateUI(List()) // Show empty list if fetching fails
         }
     }
-  }
-
-  FirebaseUtils.listenForPlaylistChanges {
-    // This is called whenever playlists change in Firebase
-    fetchPlaylists(systemIntegrator)
   }
 
   def updateUI(playlists: List[PlaylistData]): Unit = {
@@ -155,17 +156,23 @@ object PlaylistManagerUI extends JFXApp {
       // Create the "Create Playlist" button below the header area, with enhanced style
       val createPlaylistButton = new Button("Create Playlist") {
         style = """
-                  | -fx-background-color: #1DB954;
-                  | -fx-text-fill: white;
-                  | -fx-font-size: 18px;
-                  | -fx-font-weight: bold;
-                  | -fx-border-radius: 25;
-                  | -fx-background-radius: 25;
-                  | -fx-padding: 12 30;
-                  | -fx-effect: dropshadow(three-pass-box, #000000, 5, 0, 0, 2);
-                  | -fx-margin-top: 30;  // Increased margin from the top
+                  |          -fx-background-color: #1DB954;
+                  |          -fx-text-fill: #FFFFFF;
+                  |          -fx-font-size: 14px;
+                  |          -fx-background-radius: 15;
       """.stripMargin
         onAction = _ => showCreatePlaylistDialog()
+      }
+
+      val goBackButton = new Button("Back") {
+        style =
+          """
+            |          -fx-background-color: #1DB954;
+            |          -fx-text-fill: #FFFFFF;
+            |          -fx-font-size: 14px;
+            |          -fx-background-radius: 15;
+                """.stripMargin
+        onAction = _ => goBackToPreviousPage() // Call the goBackToPreviousPage method when clicked
       }
 
       // Main container for the playlists (inside a ScrollPane)
@@ -193,8 +200,14 @@ object PlaylistManagerUI extends JFXApp {
         prefHeight = fixedHeight
         style = "-fx-background-color: #2A2A2A;"  // Set the main container background to dark grey
         children = Seq(
-          createPlaylistButton, // Now placed below a reasonable margin
-          scrollableContainer   // Add the scrollable playlists container below the button
+          // Horizontal box for the "Go Back" and "Create Playlist" buttons
+          new HBox {
+            spacing = 20 // Space between the buttons
+            alignment = Pos.Center // Center the buttons horizontally
+            children = Seq(goBackButton, createPlaylistButton) // Add the buttons here
+          },
+          // Scrollable container for the playlists
+          scrollableContainer // This remains vertically aligned below the buttons
         )
       }
 
@@ -206,11 +219,46 @@ object PlaylistManagerUI extends JFXApp {
     }
   }
 
-
-  // Placeholder function for navigating to the playlist's song page (to be implemented)
   def goToSongsPage(playlistId: String): Unit = {
     println(s"Navigating to songs page for playlist with ID: $playlistId")
-    PlaylistSongsUI.show(playlistId, playlistServiceActor)
+
+    val callback = () => {
+      // Assuming `fetchPlaylistSongs` is the method that updates the PlaylistManager page
+      PlaylistManagerUI.fetchPlaylists(systemIntegrator) // Replace with actual function to refresh your playlist manager
+    }
+    PlaylistSongsUI.show(playlistId, playlistServiceActor, callback)
+  }
+
+  def goBackToPreviousPage(): Unit = {
+    println("Navigating back to the previous page.")
+
+    // Get the song library scene from the SongLibraryUI object
+    val songLibraryScene = SongLibraryUI.createSongLibraryScene()
+
+    // Set the new scene to the stage
+    stage.scene = songLibraryScene
+  }
+
+
+  def showPlaylistManager(): Unit = {
+    if (stage == null) {
+      // Initialize the stage if it's not already done
+      stage = new PrimaryStage {
+        title = "Playlist Library"
+        scene = new Scene(600, 600) {
+          fill = Color.DarkGrey
+          content = new ProgressIndicator() {
+            minHeight = 100
+            minWidth = 100
+            maxWidth = 100
+            maxHeight = 100
+            progress = -1 // Infinite progress
+          }
+        }
+      }
+    }
+    stage.show() // Show the primary stage of PlaylistManagerUI
+    fetchPlaylists
   }
 
   def deletePlaylist(playlistId: String): Unit = {
@@ -281,27 +329,5 @@ object PlaylistManagerUI extends JFXApp {
     dialog.showAndWait()
   }
 
-  // Define the primary stage
-  stage = new PrimaryStage {
-    title = "Playlist Library"
-    scene = new Scene(600, 600) {
-      // Initial content is a ProgressIndicator
-      fill = Color.DarkGrey
-      content = new VBox {
-        spacing = 5
-        alignment = Pos.Center
-        padding = Insets(20)
-        children = Seq(new ProgressIndicator() {
-          minHeight = 100
-          minWidth = 100
-          maxWidth = 100
-          maxHeight = 100
-          progress = -1 // Infinite progress
-        })
-      }
-    }
-  }
 
-  // Start fetching playlists when the application launches
-  fetchPlaylists
 }
