@@ -6,8 +6,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import protocols.{PlaylistProtocols, SongProtocols}
 import protocols.SongProtocols.SearchSong
 import scalafx.Includes.jfxSceneProperty2sfx
-import scalafx.application.{JFXApp, Platform}
-import scalafx.application.JFXApp.PrimaryStage
+import scalafx.application.{Platform}
 import scalafx.scene.Scene
 import scalafx.scene.layout.{BorderPane, GridPane, HBox, StackPane, VBox}
 import scalafx.scene.image.{Image, ImageView}
@@ -22,12 +21,11 @@ import java.io.FileInputStream
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
-
-object SongLibraryUI extends JFXApp {
+object SongLibraryUI {
 
   case class SongData(title: String, imagePath: String, filePath: String)
 
-  // Initialize the actors within the SongLibraryUI - libraeyy
+  // Initialize the actors
   val songLibrary: ActorSystem[protocols.SongProtocols.Command] = ActorSystem(SongLibraryActor(), "SongLibraryActor")
   val musicPlayerActor: ActorSystem[SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
   val playlistServiceActor: ActorSystem[PlaylistProtocols.Command] = ActorSystem(PlaylistServiceActor(), "PlaylistServiceActor")
@@ -36,9 +34,7 @@ object SongLibraryUI extends JFXApp {
     "SystemIntegratorActor"
   )
 
-  //private var allSongs: List[SongData] = List() //storing all the songs fetched form firebase
-
-  //ui compononet
+  // UI Components
   val searchField = new TextField {
     promptText = "Search for a song..."
     prefWidth = 300
@@ -56,10 +52,8 @@ object SongLibraryUI extends JFXApp {
 
   // Debounce logic for the search field
   def debounceSearch(): Unit = {
-    // Cancel any existing search action
     searchTimer.foreach(_.cancel())
 
-    // Schedule a new search action after a delay of 500ms
     searchTimer = Some(new java.util.Timer())
     searchTimer.get.schedule(new java.util.TimerTask {
       override def run(): Unit = {
@@ -68,13 +62,10 @@ object SongLibraryUI extends JFXApp {
     }, 500) // Delay in milliseconds
   }
 
-
   // Dynamically call handleSearch() when the text in the search bar changes
   searchField.text.onChange { (_, _, newValue) =>
-    debounceSearch()// Call handleSearch() whenever the search text changes
+    debounceSearch()
   }
-
-
 
   val searchButton = new Button("Search") {
     onAction = _ => handleSearch()
@@ -93,7 +84,7 @@ object SongLibraryUI extends JFXApp {
         s"""
           -fx-background-color: #1ED760;
           -fx-text-fill: #FFFFFF;
-          -fx-background-radius: 15; /* Ensure the radius is maintained on hover */
+          -fx-background-radius: 15;
           -fx-font-size: 14px;
           -fx-padding: 8 16;
         """
@@ -102,13 +93,11 @@ object SongLibraryUI extends JFXApp {
         s"""
           -fx-background-color: #1DB954;
           -fx-text-fill: #FFFFFF;
-          -fx-background-radius: 15; /* Ensure the radius is maintained when mouse leaves */
+          -fx-background-radius: 15;
           -fx-font-size: 14px;
           -fx-padding: 8 16;
         """
   }
-
-
 
   val gridPane = new GridPane {
     hgap = 20
@@ -119,10 +108,10 @@ object SongLibraryUI extends JFXApp {
 
   val scrollPane = new ScrollPane {
     content = gridPane
-    fitToWidth = true // Ensures the scrollPane's width adjusts to the parent container
-    style = "-fx-background: #1E1E1E; -fx-border-color: transparent;" // Matches the background color of your app
-    hbarPolicy = ScrollPane.ScrollBarPolicy.Never // Disable horizontal scroll if you prefer
-    vbarPolicy = ScrollPane.ScrollBarPolicy.AsNeeded // Enable vertical scroll as needed
+    fitToWidth = true
+    style = "-fx-background: #1E1E1E; -fx-border-color: transparent;"
+    hbarPolicy = ScrollPane.ScrollBarPolicy.Never
+    vbarPolicy = ScrollPane.ScrollBarPolicy.AsNeeded
   }
 
   val rootVBox = new VBox {
@@ -130,105 +119,58 @@ object SongLibraryUI extends JFXApp {
     padding = Insets(20)
     alignment = Pos.TopCenter
     style = "-fx-background-color: #1E1E1E;"
+
     children = Seq(
       new HBox {
         spacing = 10
         alignment = Pos.Center
         children = Seq(searchField, searchButton)
       },
-      scrollPane
-    )
-  }
-
-
-  //search for songs
-  def handleSearch1(): Unit = {
-    val query = searchField.text.value
-    if (query.isEmpty) {
-      println("Search query is empty. Fetching all songs...")
-      fetchSongs // Fetch all songs if no search query is provided
-    } else {
-      println(s"Searching for song: $query")
-
-      // Reply Actor to handle the search result
-      val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>
-        println(s"Received ${songs.size} songs from search query.")
-        val songDataList = songs.map { song =>
-          val title = song.getOrElse("title", "Unknown").toString
-          val imagePath = song.getOrElse("imagePath", "Unknown").toString
-          val filePath = song.getOrElse("filePath", "Unknown").toString
-          println(s"Song - Title: $title, ImagePath: $imagePath, FilePath: $filePath")
-          SongData(title, imagePath, filePath)
-        }
-        Platform.runLater {
-          println("Updating UI with search results.")
-          updateUI(songDataList)
-        }
-        Behaviors.stopped
-      }, "SearchReplyActor")
-
-      systemIntegrator ! SystemIntegratorActor.RouteToSongService(
-        SearchSong(query, replyActor))
-    }
-  }
-
-  // Define the bottom menu with "Songs" and "Playlists" buttons
-  val bottomMenu = new HBox {
-    spacing = 20
-    alignment = Pos.Center
-    padding = Insets(10)
-    style = "-fx-background-color: #1E1E1E;"
-    children = Seq(
+      scrollPane,
       new Button("Playlists") {
+        onAction = _ => {
+          // Call the method to open the PlaylistManagerUI
+          PlaylistManagerUI.showPlaylistManager() // Assuming PlaylistManagerUI has this method
+        }
         style =
-          """
+          s"""
           -fx-background-color: #1DB954;
           -fx-text-fill: #FFFFFF;
-          -fx-font-size: 14px;
           -fx-background-radius: 15;
+          -fx-font-size: 14px;
+          -fx-padding: 8 16;
+        """
+        effect = new DropShadow(5, Color.web("#1DB954"))
+        onMouseEntered = _ =>
+          style =
+            s"""
+            -fx-background-color: #1ED760;
+            -fx-text-fill: #FFFFFF;
+            -fx-background-radius: 15;
+            -fx-font-size: 14px;
+            -fx-padding: 8 16;
           """
-        onAction = _ => PlaylistManagerUI.showPlaylistManager()
+        onMouseExited = _ =>
+          style =
+            s"""
+            -fx-background-color: #1DB954;
+            -fx-text-fill: #FFFFFF;
+            -fx-background-radius: 15;
+            -fx-font-size: 14px;
+            -fx-padding: 8 16;
+          """
       }
     )
   }
 
 
 
-  // Add the bottom menu to the main layout
-  rootVBox.children.add(bottomMenu)
 
-  def handleSearch3(): Unit = {
-    val query = searchField.text.value.trim
-    if (query.nonEmpty) {
-      println(s"Searching for song: $query") // Debugging log
-
-      val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>
-        val songDataList = songs.map { song =>
-          SongData(
-            title = song.getOrElse("title", "Unknown").toString,
-            imagePath = song.getOrElse("imagePath", "Unknown").toString,
-            filePath = song.getOrElse("filePath", "Unknown").toString
-          )
-        }
-        Platform.runLater {
-          updateUI(songDataList)
-        }
-        Behaviors.stopped
-      }, "SearchReplyActor")
-
-      // Send the search request to SystemIntegratorActor
-      systemIntegrator ! SystemIntegratorActor.RouteToSongService(SearchSong(query, replyActor))
-    }
-  }
 
   def handleSearch(): Unit = {
     val query = searchField.text.value.trim
 
     if (query.isEmpty) {
-      // If the search field is empty, fetch all songs
-      println("Search bar cleared. Fetching all songs...")
-
-      // Use FirebaseUtils to fetch all songs
       FirebaseUtils.fetchAllSongs().onComplete {
         case Success(songs) =>
           val songDataList = songs.map { song =>
@@ -239,13 +181,12 @@ object SongLibraryUI extends JFXApp {
             )
           }
           Platform.runLater {
-            updateUI(songDataList) // Update the UI with all songs
+            updateUI(songDataList)
           }
         case Failure(exception) =>
           println(s"Failed to fetch all songs: ${exception.getMessage}")
       }
     } else {
-      // Otherwise, perform the search
       println(s"Searching for song: $query")
 
       val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>
@@ -257,27 +198,23 @@ object SongLibraryUI extends JFXApp {
           )
         }
         Platform.runLater {
-          updateUI(songDataList) // Update the UI with searched results
+          updateUI(songDataList)
         }
         Behaviors.stopped
       }, "SearchReplyActor")
 
-      // Send the search request to SystemIntegratorActor
       systemIntegrator ! SystemIntegratorActor.RouteToSongService(SearchSong(query, replyActor))
     }
   }
 
-
   // Fetch songs from Firebase and update the UI
-  def fetchSongs(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
-    println("Starting to fetch songs from Firebase...")
+  def fetchSongs(): Unit = {
     FirebaseUtils.fetchAllSongs().onComplete {
       case Success(songs) =>
         val songDataList = songs.map { song =>
           val title = song.getOrElse("title", "Unknown").toString
           val imagePath = song.getOrElse("imagePath", "Unknown").toString
           val filePath = song.getOrElse("filePath", "Unknown").toString
-          println(s"Mapping song - Title: $title, ImagePath: $imagePath, FilePath: $filePath")
           SongData(title, imagePath, filePath)
         }
         Platform.runLater {
@@ -288,32 +225,23 @@ object SongLibraryUI extends JFXApp {
     }
   }
 
-  def createSongLibraryScene(): Scene = {
-    // Create a fresh VBox for every new scene
-    val rootVBox = new VBox {
-      spacing = 10
-      padding = Insets(20)
-      alignment = Pos.TopCenter
-      style = "-fx-background-color: #1E1E1E;"
-      children = Seq(
-        new HBox {
-          spacing = 10
-          alignment = Pos.Center
-          children = Seq(searchField, searchButton)
-        },
-        scrollPane,
-        bottomMenu
-      )
-    }
-
-    // Return a new scene with the fresh VBox
-    new Scene(600, 400) {
-      root = rootVBox
+  def updateUI(songs: List[SongData]): Unit = {
+    Platform.runLater {
+      if (songs.isEmpty) {
+        gridPane.children.clear()
+        gridPane.add(new Label("No songs available."), 0, 0)
+      } else {
+        gridPane.children.clear()
+        songs.zipWithIndex.foreach { case (song, index) =>
+          val row = index / 3
+          val col = index % 3
+          gridPane.add(createSongBox(song), col, row)
+        }
+      }
     }
   }
 
-  // Create a song box with image and title
-  def createSongBox(song: SongData)(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): VBox = {
+  def createSongBox(song: SongData): VBox = {
     val imageView = new ImageView(new Image(new FileInputStream(song.imagePath))) {
       fitWidth = 100
       fitHeight = 100
@@ -344,75 +272,51 @@ object SongLibraryUI extends JFXApp {
     }
   }
 
-  // Update the UI with the fetched songs
-  def updateUI(songs: List[SongData])(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
+  def startSongLibraryUI(): Unit = {
+    fetchSongs()
     Platform.runLater {
-      if (songs.isEmpty) {
-        println("No songs available to display.")
-        gridPane.children.clear() // Clear previous content
-        gridPane.add(new Label("No songs available."), 0, 0)
-      } else {
-        println(s"Displaying ${songs.size} songs.")
-        gridPane.children.clear() // Clear previous content
-        songs.zipWithIndex.foreach { case (song, index) =>
-          val row = index / 3
-          val col = index % 3
-          gridPane.add(createSongBox(song), col, row)
-        }
-      }
-
-      // Recreate the VBox and Scene when updating UI
-      val newRootVBox = new VBox {
-        spacing = 10
-        padding = Insets(20)
-        alignment = Pos.TopCenter
-        style = "-fx-background-color: #1E1E1E;"
-
-        children = Seq(
-          new HBox {
-            spacing = 10
-            alignment = Pos.Center
-            children = Seq(searchField, searchButton)
-          },
-          scrollPane,
-          bottomMenu
-        )
-      }
-
-      // Create a new scene with the updated VBox
-      val newScene = new Scene(600, 400) {
-        root = newRootVBox
-      }
-
-      // Set the new scene to the stage
-      stage.scene = newScene
+      val stage = new javafx.stage.Stage
+      stage.setTitle("Song Library")
+      stage.setScene(createSongLibraryScene())
+      stage.show()
     }
   }
 
+  def createSongLibraryScene(): Scene = {
+    new Scene(600, 400) {
+      root = rootVBox
+    }
 
-  val loadingSpinner = new ProgressIndicator {
-    style = "-fx-progress-color: #1DB954;"
   }
 
-  val spinnerPane = new StackPane {
-    prefWidth = 600
-    prefHeight = 400
-    children = loadingSpinner
-    alignment = Pos.Center
+  def showSpinner(): Scene = {
+    val loadingSpinner = new ProgressIndicator {
+      style = "-fx-progress-color: #1DB954;" // Green color for the spinner
+    }
+
+    val spinnerPane = new StackPane {
+      prefWidth = 600
+      prefHeight = 400
+      children = loadingSpinner
+      alignment = Pos.Center
+    }
+
+    // Initially, display the spinner
+    val sceneWithSpinner = new Scene(600, 400) {
+      root = spinnerPane
+    }
+
+    sceneWithSpinner
   }
 
-  // Define the primary stage
-  stage = new PrimaryStage {
-    title = "Song Library"
-    scene = new Scene(600, 400) {
-      content = new VBox {
-        alignment = Pos.Center
-        children = Seq(spinnerPane)
-      }
-      //content = new Label("Loading...")
+
+  // Launch the UI without using main
+  def launchUI(): Unit = {
+    Platform.runLater {
+      startSongLibraryUI()
     }
   }
 
-  // Start fetching songs when the application launches
-  fetchSongs
+  // Call this method to start the UI
+  launchUI()
 }

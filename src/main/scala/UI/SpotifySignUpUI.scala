@@ -126,6 +126,7 @@ object SpotifySignUpUI extends JFXApp {
 
             // Send RegisterUser command to UserServiceActor
             userService ! RegisterUser(username, password, replyActor)
+            stage.scene = SpotifyLoginUI.createLoginScene(stage)
           }
         }
       }

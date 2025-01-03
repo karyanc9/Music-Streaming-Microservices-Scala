@@ -136,6 +136,7 @@ object SpotifyLoginUI extends JFXApp {
             }, "LoginReplyActor")
 
             userService ! LoginUser(username, password, replyActor)
+            stage.scene = SongLibraryUI.createSongLibraryScene()
           }
         }
       }
