@@ -5,120 +5,159 @@ import scalafx.application.JFXApp.PrimaryStage
 import scalafx.geometry.{Insets, Pos}
 import scalafx.scene.Scene
 import scalafx.scene.control._
+import scalafx.scene.image.{Image, ImageView}
 import scalafx.scene.layout._
-import scalafx.scene.paint._
-import scalafx.scene.text._
+import scalafx.scene.paint.Color
 
 object SpotifyLoginUI extends JFXApp {
 
   stage = new PrimaryStage {
-    title = "Spotify - Login"
-    scene = new Scene(360, 640) {
-      fill = Color.web("#121212")
+    title = "Spotify - Log In"
+    maximized = true // Maximizes the window without entering full-screen mode
+    scene = createLoginScene(this)
+  }
 
-      val logoLabel = new Label {
-        graphic = new Label {
-          text = "\uD83C\uDFB6" // Spotify logo placeholder
-          style = "-fx-font-size: 40px; -fx-text-fill: #1ed760;"
-        }
-        alignment = Pos.Center
+  def createLoginScene(stage: PrimaryStage): Scene = {
+    new Scene(360, 640) {
+      fill = Color.web("#121212") // Dark background color
+
+      // Logo
+      val logo = new ImageView {
+        image = new Image(getClass.getResourceAsStream("/spotifyLogo.png"))
+        fitWidth = 40
+        fitHeight = 40
       }
 
+      // Title
       val titleLabel = new Label("Log in to Spotify") {
-        font = Font.font("Circular Std Bold", FontWeight.Bold, 24)
-        textFill = Color.web("#ffffff")
+        style = "-fx-font-family: 'Circular Std'; -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;"
         alignment = Pos.Center
       }
 
-      val googleButton = new Button("Continue with Google") {
-        style = """-fx-background-color: transparent;
-                  -fx-border-color: rgba(255, 255, 255, 0.4);
-                  -fx-text-fill: #ffffff;
-                  -fx-font-size: 14px;
-                  -fx-border-radius: 25px;
-                  -fx-padding: 11px 10px;"""
-        maxWidth = 300
+      // Social Buttons
+      def createSocialButton(text: String, logoPath: String): Button = {
+        new Button(text) {
+          graphic = new ImageView {
+            image = new Image(getClass.getResourceAsStream(logoPath))
+            fitWidth = 16
+            fitHeight = 16
+          }
+          style = """-fx-background-color: transparent;
+                    -fx-border-color: rgba(255, 255, 255, 0.4);
+                    -fx-text-fill: white;
+                    -fx-font-family: 'Circular Std';
+                    -fx-font-size: 14px;
+                    -fx-font-weight: bold;
+                    -fx-border-radius: 25px;
+                    -fx-padding: 10px;"""
+          maxWidth = 300
+          onMouseEntered = _ => style = style.value.replace("-fx-border-color: rgba(255, 255, 255, 0.4);", "-fx-border-color: white;")
+          onMouseExited = _ => style = style.value.replace("-fx-border-color: white;", "-fx-border-color: rgba(255, 255, 255, 0.4);")
+        }
       }
 
-      val facebookButton = new Button("Continue with Facebook") {
-        style = googleButton.style.value
-        maxWidth = 300
-      }
+      val googleButton = createSocialButton("Continue with Google", "/googleLogo.png")
+      val facebookButton = createSocialButton("Continue with Facebook", "/facebookLogo.png")
+      val appleButton = createSocialButton("Continue with Apple", "/appleLogo.png")
 
-      val appleButton = new Button("Continue with Apple") {
-        style = googleButton.style.value
-        maxWidth = 300
+      // Email Field
+      val emailLabel = new Label("Email Address") {
+        style = "-fx-font-family: 'Circular Std'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: white;"
+        alignment = Pos.CenterLeft
       }
-
       val emailField = new TextField {
-        promptText = "Email or username"
+        promptText = "name@domain.com"
         style = """-fx-background-color: #121212;
-                  -fx-text-fill: rgba(255, 255, 255, 0.5);
-                  -fx-font-size: 14px;
                   -fx-border-color: rgba(255, 255, 255, 0.5);
-                  -fx-border-width: 1px;
-                  -fx-padding: 11.5px;"""
+                  -fx-border-radius: 4px;
+                  -fx-text-fill: white;
+                  -fx-padding: 10px;"""
         maxWidth = 300
+        alignment = Pos.CenterLeft
       }
 
+      // Password Field
+      val passwordLabel = new Label("Password") {
+        style = emailLabel.style.value
+        alignment = Pos.CenterLeft
+      }
       val passwordField = new PasswordField {
-        promptText = "Password"
+        promptText = "Enter your password"
         style = emailField.style.value
         maxWidth = 300
+        alignment = Pos.CenterLeft
       }
 
+      // Log In Button
       val loginButton = new Button("Log In") {
-        style = """-fx-background-color: rgba(30, 215, 96, 1);
+        style = """-fx-background-color: #1ed760;
                   -fx-text-fill: black;
-                  -fx-font-family: 'Circular Std Bold';
-                  -fx-border-radius: 25px;
-                  -fx-padding: 11px;"""
+                  -fx-font-family: 'Circular Std';
+                  -fx-font-size: 14px;
+                  -fx-font-weight: bold;
+                  -fx-border-radius: 50px;
+                  -fx-padding: 10px;"""
         maxWidth = 300
+        onMouseEntered = _ => style = style.value.replace("#1ed760", "#2af879")
+        onMouseExited = _ => style = style.value.replace("#2af879", "#1ed760")
       }
 
+      // Forgot Password
       val forgotPasswordLink = new Hyperlink("Forgot your password?") {
-        style = "-fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px;"
+        style = "-fx-font-family: 'Circular Std'; -fx-font-weight: bold; -fx-text-fill: white; -fx-underline: true;"
       }
 
-      val signupLink = new Hyperlink("Sign up for Spotify") {
-        style = "-fx-text-fill: rgba(30, 215, 96, 1); -fx-font-size: 12px;"
-      }
-
-      val separator = new Separator {
-        style = "-fx-background-color: rgba(255, 255, 255, 0.6);"
-      }
-
-      val cardLayout = new VBox(12) {
-        padding = Insets(24, 16, 24, 16)
+      // Sign Up Link
+      val signUpLink = new HBox(5) {
+        alignment = Pos.Center
         children = Seq(
-          logoLabel,
+          new Label("Don't have an account?") {
+            style = "-fx-font-family: 'Circular Std'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: rgba(255, 255, 255, 0.6);"
+          },
+          new Hyperlink("Sign up for Spotify") {
+            style = "-fx-font-family: 'Circular Std'; -fx-font-weight: bold; -fx-text-fill: white; -fx-underline: true;"
+            onAction = _ => {
+              stage.scene = SpotifySignUpUI.createSignUpScene(stage) // Navigate to Sign-Up Scene
+            }
+          }
+        )
+      }
+
+      // Privacy Label
+      val privacyLabel = new Label(
+        "This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply."
+      ) {
+        style = "-fx-font-family: 'Circular Std'; -fx-font-weight: bold; -fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 10px;"
+        wrapText = true
+        maxWidth = 300
+        alignment = Pos.Center
+      }
+
+      // Main Layout
+      val layout = new VBox(12) {
+        padding = Insets(16)
+        alignment = Pos.Center
+        children = Seq(
+          logo,
           titleLabel,
           googleButton,
           facebookButton,
           appleButton,
-          separator,
+          emailLabel,
           emailField,
+          passwordLabel,
           passwordField,
           loginButton,
           forgotPasswordLink,
-          new Label("Don't have an account?") {
-            style = "-fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px;"
-          },
-          signupLink
+          signUpLink,
+          privacyLabel
         )
-        alignment = Pos.Center
-        style = """-fx-background-color: black;
-                  -fx-border-radius: 8px;
-                  -fx-background-radius: 8px;"""
       }
 
-      val rootLayout = new VBox {
-        alignment = Pos.Center
-        padding = Insets(32)
-        children = Seq(cardLayout)
+      root = new StackPane {
+        children = Seq(layout)
+        style = "-fx-background-color: #121212;"
       }
-
-      root = rootLayout
     }
   }
 }

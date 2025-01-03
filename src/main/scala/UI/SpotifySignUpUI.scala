@@ -9,13 +9,17 @@ import scalafx.scene.image.Image
 import scalafx.scene.image.ImageView
 import scalafx.scene.layout._
 import scalafx.scene.paint.Color
-import scalafx.scene.text._
 
-object SpotifySignUpPage extends JFXApp {
+object SpotifySignUpUI extends JFXApp {
 
   stage = new PrimaryStage {
     title = "Spotify - Sign Up"
-    scene = new Scene(360, 640) {
+    maximized = true // Maximizes the window without entering full-screen mode
+    scene = createSignUpScene(this)
+  }
+
+  def createSignUpScene(stage: PrimaryStage): Scene = {
+    new Scene(360, 640) {
       fill = Color.web("#121212") // Dark background color for the entire page
 
       // Logo
@@ -34,7 +38,7 @@ object SpotifySignUpPage extends JFXApp {
 
       // Email Address Label
       val emailLabel = new Label("Email address") {
-        style = "-fx-font-family: 'Circular Std'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #ffffff;"
+        style = "-fx-font-family: 'Circular Std'; -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #ffffff; -fx-font-weight: bold;"
         alignment = Pos.CenterLeft
         maxWidth = 300
       }
@@ -90,28 +94,34 @@ object SpotifySignUpPage extends JFXApp {
         children = Seq(
           new Separator { maxWidth = 180; style = "-fx-background-color: rgba(255, 255, 255, 0.2);" },
           new Label("or") {
-            style = "-fx-font-family: 'Circular Std'; -fx-font-size: 12px; -fx-text-fill: #ffffff;"
+            style = "-fx-font-family: 'Circular Std'; -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #ffffff;"
           },
           new Separator { maxWidth = 180; style = "-fx-background-color: rgba(255, 255, 255, 0.2);" }
         )
       }
 
       // Social Buttons
+      def socialButtonStyle = """-fx-background-color: transparent;
+                                -fx-border-color: rgba(255, 255, 255, 0.4);
+                                -fx-text-fill: #ffffff;
+                                -fx-font-family: 'Circular Std';
+                                -fx-font-size: 14px;
+                                -fx-font-weight: bold;
+                                -fx-border-radius: 25px;
+                                -fx-padding: 10px;"""
+
+      def socialButtonHoverStyle = """-fx-border-color: white;"""
+
       val googleButton = new Button("Sign up with Google") {
         graphic = new ImageView {
           image = new Image(getClass.getResourceAsStream("/googleLogo.png"))
           fitWidth = 16
           fitHeight = 16
         }
-        style = """-fx-background-color: transparent;
-                  -fx-border-color: rgba(255, 255, 255, 0.4);
-                  -fx-text-fill: #ffffff;
-                  -fx-font-family: 'Circular Std';
-                  -fx-font-size: 14px;
-                  -fx-font-weight: bold;
-                  -fx-border-radius: 25px;
-                  -fx-padding: 10px;"""
+        style = socialButtonStyle
         maxWidth = 300
+        onMouseEntered = _ => style = socialButtonStyle + socialButtonHoverStyle
+        onMouseExited = _ => style = socialButtonStyle
       }
 
       val facebookButton = new Button("Sign up with Facebook") {
@@ -120,8 +130,10 @@ object SpotifySignUpPage extends JFXApp {
           fitWidth = 16
           fitHeight = 16
         }
-        style = googleButton.style.value
+        style = socialButtonStyle
         maxWidth = 300
+        onMouseEntered = _ => style = socialButtonStyle + socialButtonHoverStyle
+        onMouseExited = _ => style = socialButtonStyle
       }
 
       val appleButton = new Button("Sign up with Apple") {
@@ -130,13 +142,18 @@ object SpotifySignUpPage extends JFXApp {
           fitWidth = 16
           fitHeight = 16
         }
-        style = googleButton.style.value
+        style = socialButtonStyle
         maxWidth = 300
+        onMouseEntered = _ => style = socialButtonStyle + socialButtonHoverStyle
+        onMouseExited = _ => style = socialButtonStyle
       }
 
       // Already Have Account Link
       val loginLink = new Hyperlink("Log in here") {
-        style = "-fx-font-family: 'Circular Std'; -fx-text-fill: rgba(255, 255, 255, 0.6); -fx-font-size: 12px; -fx-font-weight: bold; -fx-underline: true;"
+        style = "-fx-font-family: 'Circular Std'; -fx-text-fill: #ffffff; -fx-font-size: 12px; -fx-font-weight: bold; -fx-underline: true;"
+        onAction = _ => {
+          stage.scene = SpotifyLoginUI.createLoginScene(stage) // Navigate to Login Scene
+        }
       }
 
       val alreadyHaveAccountLabel = new HBox(5) {
@@ -153,7 +170,7 @@ object SpotifySignUpPage extends JFXApp {
       val privacyLabel = new Label(
         "This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply."
       ) {
-        style = "-fx-font-family: 'Circular Std'; -fx-text-fill: #ffffff; -fx-font-size: 10px;"
+        style = "-fx-font-family: 'Circular Std'; -fx-text-fill: #ffffff; -fx-font-size: 10px; -fx-alignment: center;"
         wrapText = true
         alignment = Pos.Center
         maxWidth = 300
