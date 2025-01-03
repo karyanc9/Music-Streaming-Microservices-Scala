@@ -2,7 +2,7 @@ package main
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
-import actors.{MusicPlayerActor, SongLibraryActor, SystemIntegratorActor, UserServiceActor}
+import actors.{MusicPlayerActor, PlaylistServiceActor, SongLibraryActor, SystemIntegratorActor, UserServiceActor}
 import actors.UserServiceActor.{LoginUser, RegisterUser}
 import utils.FirebaseUtils
 import akka.actor.typed.ActorRef
@@ -15,11 +15,13 @@ object Main extends App {
   // Initialize UserServiceActor - Create the main ActorSystem once
   val userService: ActorRef[UserServiceActor.Command] = ActorSystem(UserServiceActor(), "UserServiceActor")
   val songLibrary: ActorRef[protocols.SongProtocols.Command] = ActorSystem(SongLibraryActor(), "SongLibraryActor")
-  val musicPlayerActor: ActorRef[protocols.SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
+  val musicPlayerActor: ActorSystem[protocols.SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
+  val playlistServiceActor: ActorRef[protocols.PlaylistProtocols.Command] = ActorSystem(PlaylistServiceActor(), "PlaylistServiceActor")
 
-  // Initialize SystemIntegratorActor
+
+  // Initialize SystemIntegratorActor, passing all required actors
   implicit val systemIntegrator: ActorRef[SystemIntegratorActor.Command] = ActorSystem(
-    SystemIntegratorActor(userService, songLibrary, musicPlayerActor),
+    SystemIntegratorActor(userService, songLibrary, playlistServiceActor, musicPlayerActor),
     "SystemIntegratorActor"
   )
 

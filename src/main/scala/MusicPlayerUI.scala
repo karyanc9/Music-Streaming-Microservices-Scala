@@ -9,10 +9,14 @@ import akka.actor.typed.ActorRef
 import actors.SystemIntegratorActor
 import protocols.SongProtocols.{PauseSong, PlaySong}
 import scalafx.geometry.Pos
+import models.SongInfo
 
 import java.io.FileInputStream
 
+// Assuming SongData and SongInfo are case classes
+
 object MusicPlayerUI {
+
   def show(song: SongData)(implicit systemIntegrator: ActorRef[SystemIntegratorActor.Command]): Unit = {
     val stage = new Stage {
       title = s"Music Player - ${song.title}"
@@ -51,8 +55,12 @@ object MusicPlayerUI {
 
     stage.show()
   }
-}
 
+  // Overloaded show method for SongInfo
+  def showWithSongInfo(song: SongInfo)(implicit systemIntegrator: ActorRef[SystemIntegratorActor.Command]): Unit = {
+    show(SongData(song.title, song.imagePath, song.filePath))
+  }
+}
 
 //
 //import scalafx.scene.Scene

@@ -2,17 +2,20 @@ package actors
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import protocols.SongProtocols
+import protocols.{PlaylistProtocols, SongProtocols}
 
 object SystemIntegratorActor {
   sealed trait Command
   case class RouteToUserService(msg: UserServiceActor.Command, replyTo: ActorRef[String]) extends Command
   case class RouteToSongService(msg: SongProtocols.Command) extends Command
   case class RouteToMusicPlayer(msg: SongProtocols.Command) extends Command
+  case class RouteToPlaylistService(msg: PlaylistProtocols.Command) extends Command
+
 
   def apply(
              userService: ActorRef[UserServiceActor.Command],
              songService: ActorRef[SongProtocols.Command],
+             playlistService: ActorRef[PlaylistProtocols.Command],
              musicPlayer: ActorRef[SongProtocols.Command]
            ): Behavior[Command] = Behaviors.receive { (context, message) =>
     message match {
@@ -21,26 +24,22 @@ object SystemIntegratorActor {
         replyTo ! "Message routed to UserService"
         Behaviors.same
 
-//      case RouteToSongService(msg) =>
-//        songService ! msg
-//        context.log.info(s"Message routed to SongService: $msg")
-//        Behaviors.same
-
       case RouteToSongService(msg) =>
-        msg match {
-          case search: SongProtocols.SearchSong =>
-            context.log.info(s"Routing SearchSong message to SongService: ${search.title}")
-            songService ! search
-          case other =>
-            context.log.info(s"Routing other SongService message: $other")
-            songService ! other
-        }
+        songService ! msg
+        context.log.info(s"Message routed to SongService: $msg")
         Behaviors.same
 
-      case RouteToMusicPlayer(msg) =>
-        musicPlayer ! msg
-        context.log.info(s"Message routed to MusicPlayerActor: $msg")
-        Behaviors.same
+        case RouteToMusicPlayer(msg) =>
+          musicPlayer ! msg
+          context.log.info(s"Message routed to MusicPlayerActor: $msg")
+          Behaviors.same
+
+        case RouteToPlaylistService(msg) =>
+          playlistService ! msg
+          context.log.info(s"Message routed to PlaylistServiceActor: $msg")
+          Behaviors.same
+      }
+
     }
-  }
+
 }
