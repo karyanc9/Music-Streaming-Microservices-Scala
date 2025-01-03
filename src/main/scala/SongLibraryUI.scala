@@ -9,11 +9,15 @@ import scalafx.Includes.jfxSceneProperty2sfx
 import scalafx.application.{JFXApp, Platform}
 import scalafx.application.JFXApp.PrimaryStage
 import scalafx.scene.Scene
-import scalafx.scene.layout.{BorderPane, GridPane, HBox, VBox}
+import scalafx.scene.layout.{BorderPane, GridPane, HBox, StackPane, VBox}
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.control.{Button, Label, TextField}
+import scalafx.scene.control.{Button, Label, ProgressIndicator, TextField}
 import scalafx.geometry.{Insets, Pos}
+import scalafx.scene.effect.DropShadow
+import scalafx.scene.paint.Color
+import scalafx.scene.text.Font
 import utils.FirebaseUtils
+
 import java.io.FileInputStream
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
@@ -36,6 +40,14 @@ object SongLibraryUI extends JFXApp {
   val searchField = new TextField {
     promptText = "Search for a song..."
     prefWidth = 300
+    style =
+      s"""
+        -fx-background-color: #333333;
+        -fx-text-fill: #FFFFFF;
+        -fx-background-radius: 15;
+        -fx-padding: 8;
+      """
+    font = Font("Arial", 14)
   }
 
   // Dynamically call handleSearch() when the text in the search bar changes
@@ -45,18 +57,48 @@ object SongLibraryUI extends JFXApp {
 
   val searchButton = new Button("Search") {
     onAction = _ => handleSearch()
+    val spotifyGreen = Color.web("#1DB954")
+    style =
+      s"""
+        -fx-background-color: #1DB954;
+        -fx-text-fill: #FFFFFF;
+        -fx-background-radius: 15;
+        -fx-font-size: 14px;
+        -fx-padding: 8 16;
+      """
+    effect = new DropShadow(5, spotifyGreen)
+    onMouseEntered = _ =>
+      style =
+        s"""
+          -fx-background-color: #1ED760;
+          -fx-text-fill: #FFFFFF;
+          -fx-background-radius: 15; /* Ensure the radius is maintained on hover */
+          -fx-font-size: 14px;
+          -fx-padding: 8 16;
+        """
+    onMouseExited = _ =>
+      style =
+        s"""
+          -fx-background-color: #1DB954;
+          -fx-text-fill: #FFFFFF;
+          -fx-background-radius: 15; /* Ensure the radius is maintained when mouse leaves */
+          -fx-font-size: 14px;
+          -fx-padding: 8 16;
+        """
   }
 
   val gridPane = new GridPane {
     hgap = 20
     vgap = 20
     padding = Insets(20)
+    alignment = Pos.Center
   }
 
   val rootVBox = new VBox {
     spacing = 10
     padding = Insets(20)
     alignment = Pos.TopCenter
+    style = "-fx-background-color: #1E1E1E;"
     children = Seq(
       new HBox {
         spacing = 10
@@ -196,6 +238,7 @@ object SongLibraryUI extends JFXApp {
       fitWidth = 100
       fitHeight = 100
       preserveRatio = true
+      style = "-fx-background-radius: 15; -fx-border-radius: 15;"
     }
 
     imageView.onMouseClicked = _ => {
@@ -203,34 +246,23 @@ object SongLibraryUI extends JFXApp {
       MusicPlayerUI.show(song)
     }
 
+    val titleLabel = new Label(song.title) {
+      style =
+        s"""
+          -fx-text-fill: #FFFFFF;
+          -fx-font-size: 14px;
+        """
+      alignment = Pos.Center
+    }
+
     new VBox {
       spacing = 10
       alignment = Pos.Center
       padding = Insets(10)
-      children = Seq(imageView, new Label(song.title))
+      style = "-fx-background-color: #333333; -fx-background-radius: 15;"
+      children = Seq(imageView, titleLabel)
     }
   }
-
-  // Update the UI with the fetched songss
-  //  def updateUI(songs: List[SongData])(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
-  //    Platform.runLater {
-  //      val gridPane = new GridPane {
-  //        hgap = 20
-  //        vgap = 20
-  //        padding = Insets(20)
-  //      }
-  //
-  //      songs.zipWithIndex.foreach { case (song, index) =>
-  //        val row = index / 3
-  //        val col = index % 3
-  //        gridPane.add(createSongBox(song), col, row)
-  //      }
-  //
-  //      stage.scene = new Scene {
-  //        root = gridPane
-  //      }
-  //    }
-  //  }
 
   // Update the UI with the fetched songs
   def updateUI(songs: List[SongData])(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
@@ -265,15 +297,30 @@ object SongLibraryUI extends JFXApp {
           root = rootVBox
         }
       }
+
     }
   }
 
+  val loadingSpinner = new ProgressIndicator {
+    style = "-fx-progress-color: #1DB954;"
+  }
+
+  val spinnerPane = new StackPane {
+    prefWidth = 600
+    prefHeight = 400
+    children = loadingSpinner
+    alignment = Pos.Center
+  }
 
   // Define the primary stage
   stage = new PrimaryStage {
     title = "Song Library"
     scene = new Scene(600, 400) {
-      content = new Label("Loading...")
+      content = new VBox {
+        alignment = Pos.Center
+        children = Seq(spinnerPane)
+      }
+      //content = new Label("Loading...")
     }
   }
 
