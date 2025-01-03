@@ -11,15 +11,12 @@ import scalafx.geometry.{Insets, Pos}
 import utils.FirebaseUtils
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.util.Timeout
-
 import scala.concurrent.duration._
 import akka.actor.typed.ActorRef
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 import scalafx.collections.ObservableBuffer
 import scalafx.scene.paint.Color
-
 import scala.jdk.CollectionConverters._
 import scala.reflect.internal.util.NoSourceFile.content
 

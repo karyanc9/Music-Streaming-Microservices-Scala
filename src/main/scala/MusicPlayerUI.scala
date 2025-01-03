@@ -3,13 +3,15 @@ package main
 import scalafx.scene.Scene
 import scalafx.scene.control.{Button, Label}
 import scalafx.scene.image.{Image, ImageView}
-import scalafx.scene.layout.VBox
+import scalafx.scene.layout.{HBox, VBox}
 import scalafx.stage.Stage
 import akka.actor.typed.ActorRef
 import actors.SystemIntegratorActor
 import protocols.SongProtocols.{PauseSong, PlaySong}
 import scalafx.geometry.Pos
 import models.SongInfo
+import scalafx.scene.effect.DropShadow
+import scalafx.scene.paint.Color
 
 import java.io.FileInputStream
 
@@ -25,6 +27,17 @@ object MusicPlayerUI {
           fitWidth = 200
           fitHeight = 200
           preserveRatio = true
+          style = "-fx-background-radius: 15;"
+        }
+
+        val songLabel = new Label(song.title) {
+          style =
+            """
+              -fx-text-fill: #FFFFFF;
+              -fx-font-size: 18px;
+              -fx-font-weight: bold;
+              -fx-padding: 10;
+            """
         }
 
         val playButton = new Button("Play") {
@@ -34,6 +47,33 @@ object MusicPlayerUI {
               PlaySong(song.title, song.filePath, null)
             )
           }
+          style =
+            """
+              -fx-background-color: #1DB954;
+              -fx-text-fill: #FFFFFF;
+              -fx-background-radius: 20;
+              -fx-font-size: 14px;
+              -fx-padding: 10 20;
+            """
+          effect = new DropShadow(5, Color.web("#1DB954"))
+          onMouseEntered = _ =>
+            style =
+              """
+                -fx-background-color: #1ED760;
+                -fx-text-fill: #FFFFFF;
+                -fx-background-radius: 20;
+                -fx-font-size: 14px;
+                -fx-padding: 10 20;
+              """
+          onMouseExited = _ =>
+            style =
+              """
+                -fx-background-color: #1DB954;
+                -fx-text-fill: #FFFFFF;
+                -fx-background-radius: 20;
+                -fx-font-size: 14px;
+                -fx-padding: 10 20;
+              """
         }
 
         val pauseButton = new Button("Pause") {
@@ -43,12 +83,50 @@ object MusicPlayerUI {
               PauseSong(song.title, null)
             )
           }
+          style =
+            """
+              -fx-background-color: #808080;
+              -fx-text-fill: #FFFFFF;
+              -fx-background-radius: 20;
+              -fx-font-size: 14px;
+              -fx-padding: 10 20;
+            """
+          effect = new DropShadow(5, Color.web("#A9A9A9"))
+          onMouseEntered = _ =>
+            style =
+              """
+                -fx-background-color: #B0B0B0;
+                -fx-text-fill: #FFFFFF;
+                -fx-background-radius: 20;
+                -fx-font-size: 14px;
+                -fx-padding: 10 20;
+              """
+          onMouseExited = _ =>
+            style =
+              """
+                -fx-background-color: #808080;
+                -fx-text-fill: #FFFFFF;
+                -fx-background-radius: 20;
+                -fx-font-size: 14px;
+                -fx-padding: 10 20;
+              """
+        }
+
+        val buttonContainer = new HBox {
+          spacing = 20
+          alignment = Pos.Center
+          children = Seq(playButton, pauseButton)
         }
 
         root = new VBox {
           spacing = 20
           alignment = Pos.Center
-          children = Seq(imageView, new Label(song.title), playButton, pauseButton)
+          style =
+            """
+              -fx-background-color: #1E1E1E;
+              -fx-padding: 20;
+            """
+          children = Seq(imageView, songLabel, buttonContainer)
         }
       }
     }
