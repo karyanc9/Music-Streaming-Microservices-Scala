@@ -38,6 +38,11 @@ object SongLibraryUI extends JFXApp {
     prefWidth = 300
   }
 
+  // Dynamically call handleSearch() when the text in the search bar changes
+  searchField.text.onChange { (_, _, newValue) =>
+    handleSearch() // Call handleSearch() whenever the search text changes
+  }
+
   val searchButton = new Button("Search") {
     onAction = _ => handleSearch()
   }
@@ -94,7 +99,7 @@ object SongLibraryUI extends JFXApp {
     }
   }
 
-  def handleSearch(): Unit = {
+  def handleSearch3(): Unit = {
     val query = searchField.text.value.trim
     if (query.nonEmpty) {
       println(s"Searching for song: $query") // Debugging log
@@ -109,6 +114,52 @@ object SongLibraryUI extends JFXApp {
         }
         Platform.runLater {
           updateUI(songDataList)
+        }
+        Behaviors.stopped
+      }, "SearchReplyActor")
+
+      // Send the search request to SystemIntegratorActor
+      systemIntegrator ! SystemIntegratorActor.RouteToSongService(SearchSong(query, replyActor))
+    }
+  }
+
+  def handleSearch(): Unit = {
+    val query = searchField.text.value.trim
+
+    if (query.isEmpty) {
+      // If the search field is empty, fetch all songs
+      println("Search bar cleared. Fetching all songs...")
+
+      // Use FirebaseUtils to fetch all songs
+      FirebaseUtils.fetchAllSongs().onComplete {
+        case Success(songs) =>
+          val songDataList = songs.map { song =>
+            SongData(
+              title = song.getOrElse("title", "Unknown").toString,
+              imagePath = song.getOrElse("imagePath", "Unknown").toString,
+              filePath = song.getOrElse("filePath", "Unknown").toString
+            )
+          }
+          Platform.runLater {
+            updateUI(songDataList) // Update the UI with all songs
+          }
+        case Failure(exception) =>
+          println(s"Failed to fetch all songs: ${exception.getMessage}")
+      }
+    } else {
+      // Otherwise, perform the search
+      println(s"Searching for song: $query")
+
+      val replyActor = ActorSystem(Behaviors.receiveMessage[List[Map[String, Any]]] { songs =>
+        val songDataList = songs.map { song =>
+          SongData(
+            title = song.getOrElse("title", "Unknown").toString,
+            imagePath = song.getOrElse("imagePath", "Unknown").toString,
+            filePath = song.getOrElse("filePath", "Unknown").toString
+          )
+        }
+        Platform.runLater {
+          updateUI(songDataList) // Update the UI with searched results
         }
         Behaviors.stopped
       }, "SearchReplyActor")
