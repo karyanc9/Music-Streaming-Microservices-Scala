@@ -16,6 +16,7 @@ import scalafx.scene.effect.DropShadow
 import scalafx.scene.paint.Color
 import scalafx.scene.text.Font
 import utils.FirebaseUtils
+import UI.SpotifyLoginUI
 
 import java.io.FileInputStream
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -114,6 +115,31 @@ object SongLibraryUI {
     vbarPolicy = ScrollPane.ScrollBarPolicy.AsNeeded
   }
 
+  def handleLogout(): Unit = {
+    println("Logging out and stopping all processes...")
+
+    // Stop the actor systems
+    SpotifyLoginUI.userService.terminate()
+    systemIntegrator.terminate()
+    songLibrary.terminate()
+    musicPlayerActor.terminate()
+    playlistServiceActor.terminate()
+
+    // Cancel any running timers
+    searchTimer.foreach(_.cancel())
+    searchTimer = None
+
+    // Close the JavaFX platform
+    Platform.exit()
+
+    // Call System.exit to ensure the process terminates
+    println("All processes stopped. Exiting application.")
+    System.exit(0)
+
+  }
+
+
+
   val rootVBox = new VBox {
     spacing = 10
     padding = Insets(20)
@@ -124,7 +150,39 @@ object SongLibraryUI {
       new HBox {
         spacing = 10
         alignment = Pos.Center
-        children = Seq(searchField, searchButton)
+        children = Seq(
+          new Button("Logout") {
+            onAction = _ => handleLogout()
+            style =
+              s"""
+                -fx-background-color: #FF5733;
+                -fx-text-fill: #FFFFFF;
+                -fx-background-radius: 15;
+                -fx-font-size: 14px;
+                -fx-padding: 8 16;
+              """
+            effect = new DropShadow(5, Color.web("#FF5733"))
+            onMouseEntered = _ =>
+              style =
+                s"""
+                  -fx-background-color: #FF6F47;
+                  -fx-text-fill: #FFFFFF;
+                  -fx-background-radius: 15;
+                  -fx-font-size: 14px;
+                  -fx-padding: 8 16;
+                """
+            onMouseExited = _ =>
+              style =
+                s"""
+                  -fx-background-color: #FF5733;
+                  -fx-text-fill: #FFFFFF;
+                  -fx-background-radius: 15;
+                  -fx-font-size: 14px;
+                  -fx-padding: 8 16;
+                """
+          },
+          searchField,
+          searchButton)
       },
       scrollPane,
       new Button("Playlists") {
@@ -162,6 +220,8 @@ object SongLibraryUI {
       }
     )
   }
+
+
 
 
 
@@ -301,12 +361,10 @@ object SongLibraryUI {
       alignment = Pos.Center
     }
 
-    // Initially, display the spinner
-    val sceneWithSpinner = new Scene(600, 400) {
-      root = spinnerPane
+    // Initially, display the spinner in a new scene
+    new Scene(600, 400) {
+      spinnerPane
     }
-
-    sceneWithSpinner
   }
 
 

@@ -174,17 +174,6 @@ object PlaylistManagerUI extends JFXApp {
         onAction = _ => showCreatePlaylistDialog()
       }
 
-      val goBackButton = new Button("Back") {
-        style =
-          """
-            |          -fx-background-color: #1DB954;
-            |          -fx-text-fill: #FFFFFF;
-            |          -fx-font-size: 14px;
-            |          -fx-background-radius: 15;
-                """.stripMargin
-        onAction = _ => goBackToPreviousPage() // Call the goBackToPreviousPage method when clicked
-      }
-
       // Main container for the playlists (inside a ScrollPane)
       val playlistsContainer = new VBox {
         spacing = 20
@@ -214,7 +203,7 @@ object PlaylistManagerUI extends JFXApp {
           new HBox {
             spacing = 20 // Space between the buttons
             alignment = Pos.Center // Center the buttons horizontally
-            children = Seq(goBackButton, createPlaylistButton) // Add the buttons here
+            children = Seq(createPlaylistButton) // Add the buttons here
           },
           // Scrollable container for the playlists
           scrollableContainer // This remains vertically aligned below the buttons
@@ -239,15 +228,6 @@ object PlaylistManagerUI extends JFXApp {
     PlaylistSongsUI.show(playlistId, playlistServiceActor, callback)
   }
 
-  def goBackToPreviousPage(): Unit = {
-    println("Navigating back to the previous page.")
-
-    // Get the song library scene from the SongLibraryUI object
-    val songLibraryScene = SongLibraryUI.createSongLibraryScene()
-
-    // Set the new scene to the stage
-    stage.scene = songLibraryScene
-  }
 
 
   def showPlaylistManager(): Unit = {
@@ -277,6 +257,7 @@ object PlaylistManagerUI extends JFXApp {
       root = spinnerPane
     }
 
+    stage.show()
     fetchPlaylists // Fetch the playlists from Firebase
   }
 
