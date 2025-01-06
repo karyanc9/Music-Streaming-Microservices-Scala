@@ -29,10 +29,11 @@ object PlaylistSongsUI {
   val playlistServiceActor: ActorSystem[PlaylistProtocols.Command] = ActorSystem(PlaylistServiceActor(), "PlaylistServiceActor")
   val musicPlayerActor: ActorSystem[SongProtocols.Command] = ActorSystem(MusicPlayerActor(), "MusicPlayerActor")
 
-  // Initialize systemIntegrator with ActorRef properly
+  // Initialize systemIntegrator with ActorRef
   implicit val systemIntegrator: ActorRef[SystemIntegratorActor.Command] =
     playlistServiceActor.systemActorOf(SystemIntegratorActor(null, null, playlistServiceActor, musicPlayerActor), "SystemIntegratorActor")
 
+  // fetching the songs from a playlist
   def fetchPlaylistSongs(playlistId: String): Unit = {
     println(s"Fetching songs for playlist with ID: $playlistId")
 
@@ -68,11 +69,9 @@ object PlaylistSongsUI {
     }
   }
 
-
-
-
+  // deleting a song from the playlist
   private def deleteSongFromPlaylist(playlistId: String, songId: String, songTitle: String): Unit = {
-    // Ensure `playlistServiceActor` is properly passed
+
     systemIntegrator ! SystemIntegratorActor.RouteToPlaylistService(PlaylistProtocols.RemoveSongFromPlaylist(playlistId, songId))
 
     // Notify the user
@@ -86,20 +85,21 @@ object PlaylistSongsUI {
     fetchPlaylistSongs(playlistId)
   }
 
+  // updating the UI of the page
   private def updateUI(songs: List[SongInfo], playlistId: String): Unit = {
     val gridPane = new GridPane {
       hgap = 20
       vgap = 20
       padding = Insets(20)
-      style = "-fx-background-color: #2A2A2A;" // Dark background color for the grid
+      style = "-fx-background-color: #2A2A2A;"
     }
 
     val contentPane = new BorderPane
-    contentPane.style = "-fx-background-color: #2A2A2A;" // Dark background color for the content area
+    contentPane.style = "-fx-background-color: #2A2A2A;"
 
     if (songs.isEmpty) {
       contentPane.center = new Label("No songs in this playlist.") {
-        style = "-fx-font-size: 16px; -fx-text-fill: #B0B0B0;" // Lighter gray color for the text
+        style = "-fx-font-size: 16px; -fx-text-fill: #B0B0B0;"
       }
     } else {
       songs.zipWithIndex.foreach { case (song, index) =>
@@ -108,13 +108,13 @@ object PlaylistSongsUI {
         gridPane.add(createSongBox(song, playlistId), col, row)
       }
 
-      // Wrap the gridPane in a ScrollPane
+
       val scrollPane = new ScrollPane {
         content = gridPane
-        fitToWidth = true // Ensures the ScrollPane adjusts to the parent's width
-        style = "-fx-background-color: #2A2A2A;" // Match the background color
-        hbarPolicy = ScrollPane.ScrollBarPolicy.Never // Disable horizontal scrollbar
-        vbarPolicy = ScrollPane.ScrollBarPolicy.AsNeeded // Enable vertical scrollbar as needed
+        fitToWidth = true
+        style = "-fx-background-color: #2A2A2A;"
+        hbarPolicy = ScrollPane.ScrollBarPolicy.Never
+        vbarPolicy = ScrollPane.ScrollBarPolicy.AsNeeded
       }
 
       contentPane.center = scrollPane
@@ -154,6 +154,7 @@ object PlaylistSongsUI {
   }
 
 
+  // creating the box for displaying the song
   private def createSongBox(song: SongInfo, playlistId: String): VBox = {
     val imageView = new ImageView(new Image(new FileInputStream(song.imagePath))) {
       fitWidth = 100
@@ -203,18 +204,19 @@ object PlaylistSongsUI {
     // Navigate to Music Player on click
     songBox.onMouseClicked = _ => {
       println(s"Opening music player for song: ${song.title}")
-      MusicPlayerUI.showWithSongInfo(song)(systemIntegrator) // Pass systemIntegrator directly here
+      MusicPlayerUI.showWithSongInfo(song)(systemIntegrator)
     }
 
     songBox
   }
 
 
+  // showing the dialog for adding a song
   private def showAddSongDialog(playlistId: String): Unit = {
     val dialog = new TextInputDialog() {
       title = "Add Song"
       headerText = "Add a new song to the playlist"
-      contentText = "Enter song ID:"
+      contentText = "Enter song title:"
     }
 
     val result = dialog.showAndWait()
@@ -225,12 +227,12 @@ object PlaylistSongsUI {
         println(s"Attempting to add song with ID: $songId to playlist $playlistId")
         systemIntegrator ! SystemIntegratorActor.RouteToPlaylistService(PlaylistProtocols.AddSongToPlaylist(playlistId, songId))
 
-        // Run a background task to introduce a delay before refreshing UI
+
         Future {
-          // Introduce a delay for firebase refresh
+
           Thread.sleep(500)
 
-          // After the delay, refresh the UI on the JavaFX thread
+          // refresh the UI
           Platform.runLater {
             println("Refreshing UI after song addition...")
             fetchPlaylistSongs(playlistId) // Refresh songs
@@ -238,14 +240,14 @@ object PlaylistSongsUI {
         }
 
       case Some(_) =>
-        // If the song ID is empty, just refresh the UI without alert
+
         println("Empty song ID entered, refreshing playlist...")
         Platform.runLater {
           fetchPlaylistSongs(playlistId) // Refresh songs
         }
 
       case None =>
-        // User canceled the dialog, still refresh the UI
+
         println("User canceled, refreshing playlist...")
         Platform.runLater {
           fetchPlaylistSongs(playlistId) // Refresh songs
@@ -253,13 +255,13 @@ object PlaylistSongsUI {
     }
   }
 
-  // Show the PlaylistSongsUI with fixed window size
+  // Show the PlaylistSongsUI
   def show(playlistId: String, serviceActor: ActorRef[PlaylistProtocols.Command], callback: () => Unit): Unit = {
     val stage = new scalafx.stage.Stage {
       title = "Playlist Songs"
-      width = 600 // Fixed width
-      height = 400 // Fixed height
-      resizable = false // Prevent resizing
+      width = 600
+      height = 400
+      resizable = false
       scene = new Scene(600, 400) {
         content = new Label("Loading songs...")
       }

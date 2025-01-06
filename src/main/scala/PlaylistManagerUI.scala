@@ -51,6 +51,7 @@ object PlaylistManagerUI extends JFXApp {
 
   case class PlaylistData(id: String, name: String, songCount: Int)
 
+  // fetching the playlists for display
   def fetchPlaylists(implicit systemIntegrator: ActorSystem[SystemIntegratorActor.Command]): Unit = {
     FirebaseUtils.getAllPlaylists.onComplete {
       case Success(playlists) =>
@@ -59,12 +60,12 @@ object PlaylistManagerUI extends JFXApp {
             val id = playlist.getOrElse("id", "").toString
             val name = playlist.getOrElse("name", "Unknown").toString
 
-            // Safely convert the "songs" field to a Scala Map and count the number of songs
+
             val songCount = playlist.get("songs") match {
               case Some(songMap: java.util.Map[_, _]) =>
-                // Count the number of keys in the songs map (each key represents a song)
+
                 songMap.size()
-              case _ => 0 // If "songs" is missing or not a map, default to 0
+              case _ => 0
             }
 
             PlaylistData(id, name, songCount)
@@ -88,6 +89,8 @@ object PlaylistManagerUI extends JFXApp {
     }
   }
 
+
+  // update the UI
   def updateUI(playlists: List[PlaylistData]): Unit = {
     Platform.runLater {
       // Set fixed dimensions for the content area
@@ -128,7 +131,7 @@ object PlaylistManagerUI extends JFXApp {
                 """.stripMargin
             },
 
-            // Create a VBox for buttons stacked vertically
+
             new VBox {
               spacing = 15
               alignment = Pos.Center
@@ -163,7 +166,7 @@ object PlaylistManagerUI extends JFXApp {
         }
       }
 
-      // Create the "Create Playlist" button below the header area, with enhanced style
+
       val createPlaylistButton = new Button("Create Playlist") {
         style = """
                   |          -fx-background-color: #1DB954;
@@ -174,46 +177,46 @@ object PlaylistManagerUI extends JFXApp {
         onAction = _ => showCreatePlaylistDialog()
       }
 
-      // Main container for the playlists (inside a ScrollPane)
+      // Main container for the playlists
       val playlistsContainer = new VBox {
         spacing = 20
         alignment = Pos.TopCenter
         prefWidth = fixedWidth
         padding = Insets(20)
-        style = "-fx-background-color: #2A2A2A;"  // Set the background color of the container to dark grey
+        style = "-fx-background-color: #2A2A2A;"
         children = playlistBoxes
       }
 
-      // Wrap the playlists container inside a ScrollPane
+
       val scrollableContainer = new ScrollPane {
         content = playlistsContainer
-        fitToWidth = true // Ensure the content stretches to the width of the container
-        style = "-fx-background-color: transparent;" // Keep the ScrollPane's background transparent
+        fitToWidth = true
+        style = "-fx-background-color: transparent;"
       }
 
-      // Main layout with the "Create Playlist" button placed below a margin
+
       val mainContainer = new VBox {
         spacing = 20
         alignment = Pos.TopCenter
         prefWidth = fixedWidth
         prefHeight = fixedHeight
-        style = "-fx-background-color: #2A2A2A;"  // Set the main container background to dark grey
+        style = "-fx-background-color: #2A2A2A;"
         children = Seq(
-          // Horizontal box for the "Go Back" and "Create Playlist" buttons
+
           new HBox {
-            spacing = 20 // Space between the buttons
-            alignment = Pos.Center // Center the buttons horizontally
-            children = Seq(createPlaylistButton) // Add the buttons here
+            spacing = 20
+            alignment = Pos.Center
+            children = Seq(createPlaylistButton)
           },
-          // Scrollable container for the playlists
-          scrollableContainer // This remains vertically aligned below the buttons
+
+          scrollableContainer
         )
       }
 
-      // Update the scene with the fixed layout
+
       stage.scene = new Scene(fixedWidth, fixedHeight) {
         root = mainContainer
-        fill = Color.DarkGrey // Set the overall scene background to dark grey
+        fill = Color.DarkGrey
       }
     }
   }
@@ -222,14 +225,15 @@ object PlaylistManagerUI extends JFXApp {
     println(s"Navigating to songs page for playlist with ID: $playlistId")
 
     val callback = () => {
-      // Assuming `fetchPlaylistSongs` is the method that updates the PlaylistManager page
-      PlaylistManagerUI.fetchPlaylists(systemIntegrator) // Replace with actual function to refresh your playlist manager
+
+      PlaylistManagerUI.fetchPlaylists(systemIntegrator)
     }
     PlaylistSongsUI.show(playlistId, playlistServiceActor, callback)
   }
 
 
 
+  // function to open the playlist manager
   def showPlaylistManager(): Unit = {
     if (stage == null) {
       // Initialize the stage if it's not already done
@@ -240,9 +244,9 @@ object PlaylistManagerUI extends JFXApp {
         }
       }
     }
-    // Create the new spinner pane
+
     val loadingSpinner = new ProgressIndicator {
-      style = "-fx-progress-color: #1DB954;" // Green color for the spinner
+      style = "-fx-progress-color: #1DB954;"
     }
 
     val spinnerPane = new StackPane {
@@ -252,7 +256,7 @@ object PlaylistManagerUI extends JFXApp {
       alignment = Pos.Center
     }
 
-    // Show the spinner while fetching the playlists
+
     stage.scene = new Scene(600, 600) {
       root = spinnerPane
     }
@@ -261,11 +265,7 @@ object PlaylistManagerUI extends JFXApp {
     fetchPlaylists // Fetch the playlists from Firebase
   }
 
-
-
-
-
-
+  // deleting a playlist
   def deletePlaylist(playlistId: String): Unit = {
     val alert = new Alert(Alert.AlertType.Confirmation) {
       title = "Confirm Delete"
@@ -279,9 +279,9 @@ object PlaylistManagerUI extends JFXApp {
         // Send the delete request to the playlist actor via SystemIntegrator
         systemIntegrator ! SystemIntegratorActor.RouteToPlaylistService(PlaylistProtocols.RemovePlaylist(playlistId))
 
-        // Refresh the playlists (slight delay for Firebase consistency)
+        // Refresh the playlists
         Platform.runLater {
-          Thread.sleep(500) // Optional delay
+          Thread.sleep(500)
           fetchPlaylists
         }
 
@@ -289,6 +289,8 @@ object PlaylistManagerUI extends JFXApp {
         println("Deletion cancelled.")
     }
   }
+
+  // show dialog for creating a playlist
 
   def showCreatePlaylistDialog(): Unit = {
     val dialog = new Dialog[String]() {

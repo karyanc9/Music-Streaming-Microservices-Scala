@@ -4,6 +4,7 @@ import utils.FirebaseUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
+// used for testing only
 object TestFirebaseUtils {
   def main(args: Array[String]): Unit = {
     // Initialize Firebase

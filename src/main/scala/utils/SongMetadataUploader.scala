@@ -6,8 +6,12 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
+// used to upload songs to the realtime library for use
+
 object SongMetadataUploader {
   def uploadSongsMetadata(): Future[Unit] = {
+
+    // Map of already uploaded songs , to add a new song to the library just create the map and run the program
     val songs = Map(
 //      "song1" -> Map(
 //        "id" -> "song1",
@@ -45,24 +49,24 @@ object SongMetadataUploader {
 //      "filePath" -> "songs/song4.mp3",
 //      "imagePath" -> "songs/song4.jpg"
 //    )
-      "song5" -> Map(
-        "id" -> "song5",
-        "title" -> "Iris",
-        "artist" -> "Goo Goo Dolls",
-        "genre" -> "Rock Ballad",
-        "duration" -> "4:49",
-        "filePath" -> "songs/song5.mp3",
-        "imagePath" -> "songs/song5.jpg"
-      ),
-      "song6" -> Map(
-        "id" -> "song6",
-        "title" -> "Leave A Light On",
-        "artist" -> "Belinda Carlisle",
-        "genre" -> "Pop Rock",
-        "duration" -> "4:14",
-        "filePath" -> "songs/song6.mp3",
-        "imagePath" -> "songs/song6.jpg"
-      )
+//      "song5" -> Map(
+//        "id" -> "song5",
+//        "title" -> "Iris",
+//        "artist" -> "Goo Goo Dolls",
+//        "genre" -> "Rock Ballad",
+//        "duration" -> "4:49",
+//        "filePath" -> "songs/song5.mp3",
+//        "imagePath" -> "songs/song5.jpg"
+//      ),
+//      "song6" -> Map(
+//        "id" -> "song6",
+//        "title" -> "Leave A Light On",
+//        "artist" -> "Belinda Carlisle",
+//        "genre" -> "Pop Rock",
+//        "duration" -> "4:14",
+//        "filePath" -> "songs/song6.mp3",
+//        "imagePath" -> "songs/song6.jpg"
+//      )
 
     )
 

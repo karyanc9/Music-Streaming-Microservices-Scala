@@ -110,6 +110,8 @@ object SongLibraryActor {
     }
 
     Behaviors.receiveMessage {
+
+      // Handling the addition of a song to the library
       case AddSong(songId, metadata) =>
         context.log.info(s"Adding song: $songId with metadata $metadata")
         FirebaseUtils.saveSongMetadata(songId, metadata).onComplete {
@@ -122,13 +124,11 @@ object SongLibraryActor {
         }
         Behaviors.same
 
+      // Handling the search of a song
       case SearchSong(title, replyTo) =>
         context.log.info(s"Searching for song with title: $title")
         val resultFuture = FirebaseUtils.searchSong(title)
-//        resultFuture.onComplete {
-//          case Success(songs) => println(s"searchSong Future completed with: $songs")
-//          case Failure(exception) => println(s"searchSong Future failed with: ${exception.getMessage}")
-//        }
+
         context.pipeToSelf(resultFuture) {
           case Success(songs) =>
             context.log.info(s"PipeToSelf sending WrappedSearchResult with: $songs")
@@ -140,10 +140,10 @@ object SongLibraryActor {
         context.log.info("pipeToSelf initiated for searchSong Future")
         Behaviors.same
 
+      // Handling the wrapped search of a song
       case WrappedSearchResult(songs, replyTo) =>
         if (songs.nonEmpty) {
           context.log.info(s"Number of songs found: ${songs.size}")
-          //songs.foreach(song => context.log.info(s"Song Info: $song"))
           songs.foreach(song => context.log.info(s"Song Info: ${formatSongInfo(song)}"))
         } else {
           context.log.info("No songs found.")
@@ -151,6 +151,7 @@ object SongLibraryActor {
         replyTo ! songs
         Behaviors.same
 
+      // handling the failure of a wrapped search for a song
       case WrappedSearchFailure(exception, replyTo) =>
         context.log.error(s"Error searching for song: ${exception.getMessage}")
         replyTo ! Nil

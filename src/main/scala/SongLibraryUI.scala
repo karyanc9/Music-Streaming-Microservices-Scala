@@ -58,9 +58,9 @@ object SongLibraryUI {
     searchTimer = Some(new java.util.Timer())
     searchTimer.get.schedule(new java.util.TimerTask {
       override def run(): Unit = {
-        handleSearch() // Call the handleSearch() method after the delay
+        handleSearch()
       }
-    }, 500) // Delay in milliseconds
+    }, 500)
   }
 
   // Dynamically call handleSearch() when the text in the search bar changes
@@ -132,7 +132,7 @@ object SongLibraryUI {
     // Close the JavaFX platform
     Platform.exit()
 
-    // Call System.exit to ensure the process terminates
+    // terminate the application
     println("All processes stopped. Exiting application.")
     System.exit(0)
 
@@ -188,7 +188,7 @@ object SongLibraryUI {
       new Button("Playlists") {
         onAction = _ => {
           // Call the method to open the PlaylistManagerUI
-          PlaylistManagerUI.showPlaylistManager() // Assuming PlaylistManagerUI has this method
+          PlaylistManagerUI.showPlaylistManager()
         }
         style =
           s"""
@@ -221,12 +221,7 @@ object SongLibraryUI {
     )
   }
 
-
-
-
-
-
-
+  // searching for a song
   def handleSearch(): Unit = {
     val query = searchField.text.value.trim
 
@@ -285,6 +280,7 @@ object SongLibraryUI {
     }
   }
 
+  // updating the UI
   def updateUI(songs: List[SongData]): Unit = {
     Platform.runLater {
       if (songs.isEmpty) {
@@ -301,6 +297,7 @@ object SongLibraryUI {
     }
   }
 
+  // creating song box to display the songs
   def createSongBox(song: SongData): VBox = {
     val imageView = new ImageView(new Image(new FileInputStream(song.imagePath))) {
       fitWidth = 100
@@ -332,6 +329,7 @@ object SongLibraryUI {
     }
   }
 
+  // method to open the song library page
   def startSongLibraryUI(): Unit = {
     fetchSongs()
     Platform.runLater {
@@ -351,7 +349,7 @@ object SongLibraryUI {
 
   def showSpinner(): Scene = {
     val loadingSpinner = new ProgressIndicator {
-      style = "-fx-progress-color: #1DB954;" // Green color for the spinner
+      style = "-fx-progress-color: #1DB954;"
     }
 
     val spinnerPane = new StackPane {
@@ -361,20 +359,17 @@ object SongLibraryUI {
       alignment = Pos.Center
     }
 
-    // Initially, display the spinner in a new scene
+
     new Scene(600, 400) {
       spinnerPane
     }
   }
 
-
-  // Launch the UI without using main
   def launchUI(): Unit = {
     Platform.runLater {
       startSongLibraryUI()
     }
   }
 
-  // Call this method to start the UI
   launchUI()
 }

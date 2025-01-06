@@ -2,6 +2,8 @@ package protocols
 
 object PlaylistProtocols {
 
+  // Commands used by the PlaylistServiceActor
+
   sealed trait Command
 
   case class CreatePlaylist(name: String) extends Command

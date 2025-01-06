@@ -8,7 +8,7 @@ import scala.util.{Failure, Success}
 
 object UserServiceActor {
 
-  // Define supported commands
+  // Define supported commands for the UserServiceActor
   sealed trait Command
   case class RegisterUser(username: String, password: String, replyTo: ActorRef[String]) extends Command
   case class LoginUser(username: String, password: String, replyTo: ActorRef[String]) extends Command

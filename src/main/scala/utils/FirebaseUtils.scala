@@ -25,7 +25,7 @@ object FirebaseUtils {
         val serviceAccount = new FileInputStream("src/main/firebase/firebase-config.json")
         val options = FirebaseOptions.builder()
           .setCredentials(com.google.auth.oauth2.GoogleCredentials.fromStream(serviceAccount))
-          .setDatabaseUrl("https://spotify-8b642-default-rtdb.asia-southeast1.firebasedatabase.app")  // Use your actual Firebase database URL
+          .setDatabaseUrl("https://spotify-8b642-default-rtdb.asia-southeast1.firebasedatabase.app")
           .build()
 
         FirebaseApp.initializeApp(options)
@@ -93,9 +93,7 @@ object FirebaseUtils {
     promise.future
   }
 
-  /** Register a new user with Firebase Authentication */
-
-  /** Register a new user with Firebase Authentication */
+  // register user with firebase authentication
   def registerUser(username: String, password: String): Future[Option[String]] = {
     initializeFirebase()
     val promise = Promise[Option[String]]()
@@ -119,7 +117,7 @@ object FirebaseUtils {
     promise.future
   }
 
-  /** Login a user with Firebase Authentication */
+  // login a user using firebase authentication
   def loginUser(username: String, password: String): Future[Option[String]] = {
     initializeFirebase()
     val promise = Promise[Option[String]]()
@@ -128,7 +126,7 @@ object FirebaseUtils {
     Try {
       val userRecord = firebaseAuth.getUserByEmail(username)
       if (userRecord != null) {
-        // Only create session once, and directly pass the result to the promise
+
         createSession(username).onComplete {
           case Success(token) =>
             // Only send a successful response after session creation
@@ -155,7 +153,7 @@ object FirebaseUtils {
     promise.future
   }
 
-  /** Create a session for a user */
+  // creating a session for the logged in user
   def createSession(username: String): Future[String] = {
     initializeFirebase()
     val token = UUID.randomUUID().toString // Generate a unique session token
@@ -186,7 +184,7 @@ object FirebaseUtils {
     promise.future
   }
 
-  /** Check if an existing session already exists for a user */
+  // check if existing user already exists for a session
   def checkExistingSession(username: String): Future[Option[String]] = {
     initializeFirebase()
     val promise = Promise[Option[String]]()
@@ -212,7 +210,7 @@ object FirebaseUtils {
     promise.future
   }
 
-  /** Validate a session token */
+  /// validating a session token
   def validateSession(token: String): Future[Boolean] = {
     initializeFirebase()
     val promise = Promise[Boolean]()
@@ -232,7 +230,7 @@ object FirebaseUtils {
     promise.future
   }
 
-  /** Search for a song by title in Firebase Realtime Database */
+  //searching for a song using firebase realtime database
   def searchSong2(title: String): Future[List[Map[String, Any]]] = {
     initializeFirebase()
     val promise = Promise[List[Map[String, Any]]]()
@@ -326,7 +324,7 @@ object FirebaseUtils {
     promise.future
   }
 
-
+  // fetching all the songs from the firebase realtime database
   def fetchAllSongs(): Future[List[Map[String, Any]]] = {
     initializeFirebase()
     val promise = Promise[List[Map[String, Any]]]()
@@ -373,7 +371,7 @@ object FirebaseUtils {
     promise.future
   }
 
-  /** Fetch all song metadata from Firebase Realtime Database  */
+  // fetch all songs from firebase realtime database
   def fetchAllSongs2(): Future[List[Map[String, Any]]] = {
     initializeFirebase()
     val promise = Promise[List[Map[String, Any]]]()
@@ -397,10 +395,7 @@ object FirebaseUtils {
                 println(s"Error processing child ${child.getKey}: ${e.getMessage}")
                 null // Skip problematic entries
             }
-            //child.getValue(classOf[java.util.Map[String, Any]]).asScala.toMap
-            //            val songData = child.getValue(classOf[java.util.Map[String, Any]]).asScala.toMap
-            //            println(s"Song data: $songData")
-            //            songData
+
           }.filter(_ != null)
           println(s"Fetched songs: $songs")
           promise.success(songs)
@@ -447,7 +442,7 @@ object FirebaseUtils {
   }
 
 
-
+  // adding a song to the playlist
   def addSongToPlaylist(playlistId: String, songTitle: String): Future[Unit] = {
     val playlistRef = database.child("playlists").child(playlistId).child("songs")
     val promise = Promise[Unit]()
@@ -475,6 +470,7 @@ object FirebaseUtils {
     promise.future
   }
 
+  // helper function for adding song to the playlist
   def fetchSongDetails(songTitle: String): Future[Option[(String, Map[String, Any])]] = {
     val songsRef = database.child("songs")
     val promise = Promise[Option[(String, Map[String, Any])]]()
@@ -490,7 +486,7 @@ object FirebaseUtils {
           val songDataOpt = snapshot.getChildren.asScala.collectFirst {
             case child if Option(child.child("title").getValue).exists(_.toString.toLowerCase == searchTitle) =>
               val songData = child.getValue(new GenericTypeIndicator[java.util.Map[String, Any]]() {}).asScala.toMap
-              val songId = child.getKey // Use Firebase's child key (songId)
+              val songId = child.getKey // Use songId as the key for retrieval
               (songId, songData) // Return songId and the song data
           }
 
@@ -509,6 +505,7 @@ object FirebaseUtils {
   }
 
 
+  // fetching songs for a playlist from firebase realtime database
   def getPlaylistSongs(playlistId: String): Future[List[Map[String, Any]]] = {
     val playlistRef = database.child("playlists").child(playlistId).child("songs")
     val promise = Promise[List[Map[String, Any]]]()
@@ -658,6 +655,7 @@ object FirebaseUtils {
     promise.future
   }
 
+  // function to listen for changes in the playlist and refresh the PlaylistServiceUI
   def listenForPlaylistChanges(onUpdate: => Unit): Unit = {
     val playlistRef = FirebaseDatabase.getInstance().getReference("playlists")
 
@@ -675,7 +673,7 @@ object FirebaseUtils {
   }
 
 
-  /** Tie Logic to UI: Register User */
+  // tieing the logic for register user to the UI
   def registerUserUI(username: String, password: String): Future[String] = {
     registerUser(username, password).map {
       case Some(message) => s"Registration successful: $message"
@@ -683,7 +681,8 @@ object FirebaseUtils {
     }
   }
 
-  /** Tie Logic to UI: Login User */
+
+  // tieing logic for login user to the UI
   def loginUserUI(username: String, password: String): Future[String] = {
     loginUser(username, password).map {
       case Some(message) => s"Login successful: $message"

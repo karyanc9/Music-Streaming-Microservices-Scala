@@ -22,6 +22,8 @@ object PlaylistServiceActor {
 
 
     Behaviors.receiveMessage {
+
+      // Handle creation of playlist
       case CreatePlaylist(name) =>
         context.log.info(s"Creating playlist: $name")
 
@@ -33,6 +35,7 @@ object PlaylistServiceActor {
         }
         Behaviors.same
 
+      // Handle adding a song to the selected playlist
       case AddSongToPlaylist(playlistId, songId) =>
         context.log.info(s"Adding song $songId to playlist $playlistId")
 
@@ -44,7 +47,8 @@ object PlaylistServiceActor {
         }
         Behaviors.same
 
-      case GetPlaylistSongs(playlistId) => // Handling the new command to get songs in a playlist
+      // Retrieving the songs for the selected playlist
+      case GetPlaylistSongs(playlistId) =>
         context.log.info(s"Fetching songs for playlist: $playlistId")
 
         FirebaseUtils.getPlaylists(playlistId).onComplete {
@@ -61,6 +65,7 @@ object PlaylistServiceActor {
         }
         Behaviors.same
 
+      // Removing a song from the selected playlist
       case RemoveSongFromPlaylist(playlistId, songId) =>
         context.log.info(s"Removing song $songId from playlist $playlistId")
 
@@ -72,6 +77,7 @@ object PlaylistServiceActor {
         }
         Behaviors.same
 
+      // Retrieving the playlist
       case GetPlaylist(playlistId) =>
         context.log.info(s"Fetching playlist: $playlistId")
 
@@ -79,7 +85,7 @@ object PlaylistServiceActor {
           case Success(result) =>
             result match {
               case Some(data) =>
-                context.log.info(s"Playlist data: ${formatPlaylistInfo(data)}") // Using formatPlaylistInfo here
+                context.log.info(s"Playlist data: ${formatPlaylistInfo(data)}")
               case None =>
                 context.log.info("Playlist not found.")
             }
@@ -88,6 +94,7 @@ object PlaylistServiceActor {
         }
         Behaviors.same
 
+      // Retrieving all the playlists
       case GetAllPlaylists() =>
         context.log.info("Fetching all playlists")
 
@@ -101,6 +108,7 @@ object PlaylistServiceActor {
         }
         Behaviors.same
 
+      // Handling the removal of a playlist
       case RemovePlaylist(playlistId) =>
         context.log.info(s"Removing playlist: $playlistId")
 

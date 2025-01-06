@@ -15,18 +15,18 @@ import scalafx.scene.paint.Color
 
 object SpotifyLoginUI extends JFXApp {
 
-  // Actor reference for UserServiceActor (Replace with your actual system setup if necessary)
+  // Actor reference for UserServiceActor
   lazy val userService: ActorSystem[actors.UserServiceActor.Command] = ActorSystem(actors.UserServiceActor(), "UserServiceActor")
 
   stage = new PrimaryStage {
     title = "Spotify - Log In"
-    maximized = true // Maximizes the window without entering full-screen mode
+    maximized = true
     scene = createLoginScene(this)
   }
 
   def createLoginScene(stage: PrimaryStage): Scene = {
     new Scene(360, 640) {
-      fill = Color.web("#121212") // Dark background color
+      fill = Color.web("#121212")
 
       // Logo
       val logo = new ImageView {

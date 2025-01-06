@@ -26,7 +26,7 @@ object SpotifySignUpUI extends JFXApp {
 
   def createSignUpScene(stage: PrimaryStage): Scene = {
     new Scene(360, 640) {
-      fill = Color.web("#121212") // Dark background color
+      fill = Color.web("#121212")
 
       // Logo
       val logoLabel = new ImageView {
