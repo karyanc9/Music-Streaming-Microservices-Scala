@@ -68,6 +68,46 @@ object SongMetadataUploader {
 //        "imagePath" -> "songs/song6.jpg"
 //      )
 
+//      "song7" -> Map(
+//        "id" -> "song7",
+//        "title" -> "Ivy",
+//        "artist" -> "Frank Ocean",
+//        "genre" -> "R&B/Soul",
+//        "duration" -> "4:09",
+//        "filePath" -> "songs/song7.mp3",
+//        "imagePath" -> "songs/song7.jpg"
+//      ),
+
+//    "song8" -> Map(
+//      "id" -> "song8",
+//      "title" -> "Sastanàqqàm",
+//      "artist" -> "Tinariwen",
+//      "genre" -> "desert blues",
+//      "duration" -> "3:22",
+//      "filePath" -> "songs/song8.mp3",
+//      "imagePath" -> "songs/song8.jpg"
+//    ),
+
+//      "song9" -> Map(
+//        "id" -> "song9",
+//        "title" -> "Nandemonaiya",
+//        "artist" -> "Radwimps",
+//        "genre" -> "Japanese rock",
+//        "duration" -> "3:01",
+//        "filePath" -> "songs/song9.mp3",
+//        "imagePath" -> "songs/song9.jpg"
+//      ),
+
+//      "song10" -> Map(
+//        "id" -> "song10",
+//        "title" -> "Colors",
+//        "artist" -> "Black Pumas",
+//        "genre" -> "R&B soul",
+//        "duration" -> "6:46",
+//        "filePath" -> "songs/song10.mp3",
+//        "imagePath" -> "songs/song10.jpg"
+//      ),
+
     )
 
     // Collect all Futures into a single Future
